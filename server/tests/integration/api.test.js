@@ -241,6 +241,15 @@ describe('API Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.data).toEqual([]);
     });
+
+    it('should return array of incidents after detection', async () => {
+      // First, simulate failure scenario via Demo Simulator to generate an incident
+      await request(app).post('/api/demo/scenarios/payment-failure');
+      const res = await request(app).get('/api/incidents');
+      expect(res.status).toBe(200);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      expect(res.body.data[0]).toHaveProperty('incidentId');
+    });
   });
 
   describe('GET /api/incidents/:id', () => {
@@ -249,6 +258,16 @@ describe('API Integration Tests', () => {
       expect(res.status).toBe(404);
       expect(res.body.error.code).toBe('NOT_FOUND');
     });
+
+    it('should return incident by ID', async () => {
+      const incidents = await request(app).get('/api/incidents');
+      if (incidents.body.data.length === 0) return; // Skip if no incident
+
+      const id = incidents.body.data[0].incidentId;
+      const res = await request(app).get(`/api/incidents/${id}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.incidentId).toBe(id);
+    });
   });
 
   describe('GET /api/incidents/:id/replay', () => {
@@ -256,10 +275,22 @@ describe('API Integration Tests', () => {
       const res = await request(app).get('/api/incidents/nonexistent/replay');
       expect(res.status).toBe(404);
     });
+
+    it('should return replay for an existing incident', async () => {
+      const incidents = await request(app).get('/api/incidents');
+      if (incidents.body.data.length === 0) return; // Skip if no incident
+
+      const id = incidents.body.data[0].incidentId;
+      const res = await request(app).get(`/api/incidents/${id}/replay`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.incidentId).toBe(id);
+      expect(Array.isArray(res.body.data.events)).toBe(true);
+    });
   });
 
   describe('POST /api/incidents/detect', () => {
     it('should return 200 with no incidents when no anomalies', async () => {
+      await request(app).post('/api/demo/reset'); // ensure clean state
       const res = await request(app).post('/api/incidents/detect').send({});
       expect(res.status).toBe(200);
       expect(res.body.data.detected).toBe(0);
