@@ -14,6 +14,7 @@ const {
   IncidentDetectionService,
   IncidentReplayService,
   DeploymentAnalysisService,
+  DeploymentService,
 } = require('./application');
 const { config } = require('./config');
 
@@ -78,6 +79,10 @@ function createContainer() {
     serviceRepository,
   });
 
+  const deploymentService = new DeploymentService({
+    deploymentRepository,
+  });
+
   return {
     // Repositories (for controllers that need direct reads)
     serviceRepository,
@@ -94,6 +99,7 @@ function createContainer() {
     incidentDetectionService,
     incidentReplayService,
     deploymentAnalysisService,
+    deploymentService,
   };
 }
 

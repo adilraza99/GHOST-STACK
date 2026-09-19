@@ -1,19 +1,17 @@
 const { success } = require('../helpers/response');
-const Deployment = require('../../../domain/entities/Deployment');
 
 /**
  * Deployment controller — thin HTTP adapter.
  */
 function createDeploymentController({
-  deploymentRepository,
+  deploymentService,
   deploymentAnalysisService,
   graphService,
 }) {
   return {
     /** POST /api/deployments */
     async createDeployment(req, res) {
-      const deployment = new Deployment(req.body);
-      const saved = await deploymentRepository.save(deployment);
+      const saved = await deploymentService.create(req.body);
       success(res, saved.toJSON(), 201);
     },
 

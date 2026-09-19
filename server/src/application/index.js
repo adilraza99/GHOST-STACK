@@ -4,6 +4,7 @@ const BlastRadiusService = require('./BlastRadiusService');
 const IncidentDetectionService = require('./IncidentDetectionService');
 const IncidentReplayService = require('./IncidentReplayService');
 const DeploymentAnalysisService = require('./DeploymentAnalysisService');
+const DeploymentService = require('./DeploymentService');
 
 module.exports = {
   TelemetryProcessingService,
@@ -12,4 +13,6 @@ module.exports = {
   IncidentDetectionService,
   IncidentReplayService,
   DeploymentAnalysisService,
+  DeploymentService,
 };
+
