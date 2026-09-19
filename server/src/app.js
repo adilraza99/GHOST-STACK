@@ -10,13 +10,22 @@ const {
   notFoundHandler,
 } = require('./interfaces/http/middleware');
 const healthRoutes = require('./interfaces/http/routes/healthRoutes');
+const { createServiceRoutes } = require('./interfaces/http/routes/serviceRoutes');
+const { createDependencyRoutes } = require('./interfaces/http/routes/dependencyRoutes');
+const { createTelemetryRoutes } = require('./interfaces/http/routes/telemetryRoutes');
+const { createBlastRadiusRoutes } = require('./interfaces/http/routes/blastRadiusRoutes');
+const { createIncidentRoutes } = require('./interfaces/http/routes/incidentRoutes');
+const { createDeploymentRoutes } = require('./interfaces/http/routes/deploymentRoutes');
+const { createDemoRoutes } = require('./interfaces/http/routes/demoRoutes');
 
 /**
  * Creates and configures the Express application.
  * Responsible for middleware registration and route mounting.
  * Does NOT start the server — that is server.js's responsibility.
+ *
+ * @param {object} container - Dependency container from createContainer()
  */
-function createApp() {
+function createApp(container) {
   const app = express();
 
   // --- Security middleware ---
@@ -53,15 +62,13 @@ function createApp() {
 
   // --- API Routes ---
   app.use('/api', healthRoutes);
-
-  // Future route groups will be mounted here:
-  // app.use('/api', serviceRoutes);
-  // app.use('/api', dependencyRoutes);
-  // app.use('/api', telemetryRoutes);
-  // app.use('/api', incidentRoutes);
-  // app.use('/api', blastRadiusRoutes);
-  // app.use('/api', deploymentRoutes);
-  // app.use('/api', demoRoutes);
+  app.use('/api', createServiceRoutes(container));
+  app.use('/api', createDependencyRoutes(container));
+  app.use('/api', createTelemetryRoutes(container));
+  app.use('/api', createBlastRadiusRoutes(container));
+  app.use('/api', createIncidentRoutes(container));
+  app.use('/api', createDeploymentRoutes(container));
+  app.use('/api', createDemoRoutes(container));
 
   // --- Error handling ---
   app.use(notFoundHandler);

@@ -2,6 +2,7 @@ const { config, validateConfig } = require('./src/config');
 const { logger } = require('./src/infrastructure/logging');
 const { connectDatabase } = require('./src/infrastructure/database');
 const { createApp } = require('./src/app');
+const { createContainer } = require('./src/container');
 
 /**
  * GhostStack Server Entry Point
@@ -9,8 +10,9 @@ const { createApp } = require('./src/app');
  * Responsible for:
  * 1. Validating configuration
  * 2. Connecting to MongoDB
- * 3. Starting the Express server
- * 4. Handling graceful shutdown
+ * 3. Creating the dependency container
+ * 4. Starting the Express server
+ * 5. Handling graceful shutdown
  */
 async function start() {
   try {
@@ -21,8 +23,9 @@ async function start() {
     // Connect to MongoDB
     await connectDatabase(config.mongoUri);
 
-    // Create and start Express app
-    const app = createApp();
+    // Create dependency container and Express app
+    const container = createContainer();
+    const app = createApp(container);
 
     const server = app.listen(config.port, () => {
       logger.info({

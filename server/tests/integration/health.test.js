@@ -1,6 +1,6 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
-const { createApp } = require('../../src/app');
+const { createTestApp } = require('../helpers/testApp');
 
 describe('Health Endpoint', () => {
   let app;
@@ -9,7 +9,7 @@ describe('Health Endpoint', () => {
     // Connect to a test database
     const testUri = process.env.MONGO_URI || 'mongodb://localhost:27017/ghoststack-test';
     await mongoose.connect(testUri);
-    app = createApp();
+    ({ app } = createTestApp());
   });
 
   afterAll(async () => {
@@ -56,15 +56,9 @@ describe('Health Endpoint', () => {
     expect(res.body.error.message).toContain('/api/nonexistent');
   });
 
-  it('should return rate limit error format', async () => {
-    // Create an app with very low rate limit for testing
-    const rateLimitedApp = require('../../src/app').createApp();
-
-    // This just verifies the response format is correct for normal requests
-    const res = await request(rateLimitedApp).get('/api/health');
+  it('should return rate limit headers', async () => {
+    const res = await request(app).get('/api/health');
     expect(res.status).toBe(200);
-
-    // Verify rate limit headers are present (standardHeaders: true)
     expect(res.headers['ratelimit-limit']).toBeDefined();
   });
 });
