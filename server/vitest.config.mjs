@@ -7,6 +7,7 @@ export default defineConfig({
     testTimeout: 10000,
     hookTimeout: 10000,
     include: ['tests/**/*.test.js'],
+    fileParallelism: false,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.js'],
