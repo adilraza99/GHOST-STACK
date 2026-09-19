@@ -43,8 +43,8 @@ class BlastRadiusService {
     const directSet = new Set(directlyAffected);
     const indirectlyAffected = allUpstream.filter((id) => !directSet.has(id));
 
-    // Upstream services: services this service depends on (its own dependencies)
-    const upstreamServices = this.graphService.getDirectDependencies(serviceId);
+    // Upstream services: services that depend on this service (transitive dependents)
+    const upstreamServices = allUpstream;
 
     // Downstream: services this service transitively depends on
     const downstreamServices = this.graphService.getDownstream(serviceId);
