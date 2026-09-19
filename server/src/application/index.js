@@ -5,6 +5,7 @@ const IncidentDetectionService = require('./IncidentDetectionService');
 const IncidentReplayService = require('./IncidentReplayService');
 const DeploymentAnalysisService = require('./DeploymentAnalysisService');
 const DeploymentService = require('./DeploymentService');
+const { DemoSimulator } = require('./DemoSimulator');
 
 module.exports = {
   TelemetryProcessingService,
@@ -14,5 +15,6 @@ module.exports = {
   IncidentReplayService,
   DeploymentAnalysisService,
   DeploymentService,
+  DemoSimulator,
 };
 

@@ -15,6 +15,7 @@ const {
   IncidentReplayService,
   DeploymentAnalysisService,
   DeploymentService,
+  DemoSimulator,
 } = require('./application');
 const { config } = require('./config');
 
@@ -83,6 +84,21 @@ function createContainer() {
     deploymentRepository,
   });
 
+  const demoSimulator = new DemoSimulator({
+    telemetryProcessingService,
+    deploymentService,
+    deploymentAnalysisService,
+    incidentDetectionService,
+    blastRadiusService,
+    graphService,
+    serviceRepository,
+    dependencyRepository,
+    telemetryRepository,
+    incidentRepository,
+    incidentEventRepository,
+    deploymentRepository,
+  });
+
   return {
     // Repositories (for controllers that need direct reads)
     serviceRepository,
@@ -100,6 +116,7 @@ function createContainer() {
     incidentReplayService,
     deploymentAnalysisService,
     deploymentService,
+    demoSimulator,
   };
 }
 
