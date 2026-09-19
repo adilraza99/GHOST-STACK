@@ -41,6 +41,10 @@ async function fetchClient(endpoint, options = {}) {
     const data = await response.json().catch(() => null);
 
     if (!response.ok || (data && !data.success)) {
+      // Special case: /health endpoint returns HTTP 503 when degraded, but includes valid data payload
+      if (response.status === 503 && data && data.success && data.data && data.data.status === 'degraded') {
+        return data.data;
+      }
       const code = data?.error?.code || 'UNKNOWN_ERROR';
       const message = data?.error?.message || `HTTP ${response.status} Error`;
       throw new ApiError(message, code, response.status);

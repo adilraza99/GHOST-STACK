@@ -27,7 +27,23 @@ export function useFetch(fetcher, deps = []) {
   };
 
   useEffect(() => {
-    execute();
+    let isMounted = true;
+    const run = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetcher();
+        if (isMounted) setData(result);
+      } catch (err) {
+        if (isMounted) setError(err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    run();
+    return () => {
+      isMounted = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 

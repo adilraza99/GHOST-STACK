@@ -56,28 +56,6 @@ function severityColor(severity) {
   return map[(severity || '').toLowerCase()] || 'text-zinc-400';
 }
 
-/* ------------------------------------------------------------------ */
-/*  Stat Card                                                         */
-/* ------------------------------------------------------------------ */
-
-function StatCard({ icon: Icon, label, value, sub, iconColor }) {
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">{label}</p>
-            <p className="mt-1 text-2xl font-bold text-zinc-100">{value ?? '--'}</p>
-            {sub && <p className="mt-0.5 text-xs text-zinc-500">{sub}</p>}
-          </div>
-          <div className={cn('rounded-lg bg-zinc-800/60 p-2.5', iconColor)}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 /* ------------------------------------------------------------------ */
 /*  Health Section                                                    */
@@ -318,17 +296,15 @@ function DependencySection() {
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="rounded-md border border-zinc-800 bg-zinc-950/50 p-4 text-center">
             <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Services</p>
-            <p className="text-2xl font-bold text-zinc-100">{stats.serviceCount ?? '--'}</p>
+            <p className="text-2xl font-bold text-zinc-100">{stats.nodeCount ?? stats.serviceCount ?? '--'}</p>
           </div>
           <div className="rounded-md border border-zinc-800 bg-zinc-950/50 p-4 text-center">
             <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Dependencies</p>
             <p className="text-2xl font-bold text-zinc-100">{stats.edgeCount ?? edges.length}</p>
           </div>
           <div className="rounded-md border border-zinc-800 bg-zinc-950/50 p-4 text-center">
-            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Has Cycles</p>
-            <p className={cn('text-2xl font-bold', stats.hasCycles ? 'text-amber-400' : 'text-emerald-400')}>
-              {stats.hasCycles != null ? (stats.hasCycles ? 'Yes' : 'No') : '--'}
-            </p>
+            <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider mb-1">Components</p>
+            <p className="text-2xl font-bold text-zinc-100">{stats.components ?? '--'}</p>
           </div>
         </div>
         {edges.length > 0 && (
@@ -342,8 +318,11 @@ function DependencySection() {
                 </tr>
               </thead>
               <tbody>
-                {edges.map((edge, i) => (
-                  <tr key={i} className="border-b border-zinc-800/30 last:border-0">
+                {edges.map((edge) => (
+                  <tr
+                    key={edge.dependencyId || `${edge.sourceServiceId}:${edge.targetServiceId}:${edge.dependencyType}`}
+                    className="border-b border-zinc-800/30 last:border-0"
+                  >
                     <td className="py-1.5 pr-3 text-zinc-300">{edge.sourceServiceId}</td>
                     <td className="py-1.5 pr-3 text-zinc-300">{edge.targetServiceId}</td>
                     <td className="py-1.5">
