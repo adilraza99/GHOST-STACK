@@ -63,6 +63,9 @@ class TelemetryEvent {
     }
 
     this.eventId = props.eventId || uuidv4();
+    this.projectId = (props.projectId && typeof props.projectId === 'string' && props.projectId.trim().length > 0)
+      ? props.projectId.trim()
+      : 'project-default';
     this.timestamp = timestamp;
     this.sourceService = props.sourceService.trim();
     this.targetService = props.targetService ? props.targetService.trim() : null;
@@ -100,6 +103,7 @@ class TelemetryEvent {
   toJSON() {
     return {
       eventId: this.eventId,
+      projectId: this.projectId,
       timestamp: this.timestamp.toISOString(),
       sourceService: this.sourceService,
       targetService: this.targetService,

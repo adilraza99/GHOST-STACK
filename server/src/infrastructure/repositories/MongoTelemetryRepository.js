@@ -10,6 +10,7 @@ class MongoTelemetryRepository extends TelemetryRepository {
     if (!doc) return null;
     return new TelemetryEvent({
       eventId: doc.eventId,
+      projectId: doc.projectId || 'project-default',
       timestamp: doc.timestamp,
       sourceService: doc.sourceService,
       targetService: doc.targetService,
@@ -27,6 +28,7 @@ class MongoTelemetryRepository extends TelemetryRepository {
   async save(telemetryEvent) {
     const doc = await TelemetryEventModel.create({
       eventId: telemetryEvent.eventId,
+      projectId: telemetryEvent.projectId || 'project-default',
       timestamp: telemetryEvent.timestamp,
       sourceService: telemetryEvent.sourceService,
       targetService: telemetryEvent.targetService,
@@ -42,17 +44,21 @@ class MongoTelemetryRepository extends TelemetryRepository {
     return this._toDomain(doc);
   }
 
-  async findByTimeRange(startTime, endTime) {
-    const docs = await TelemetryEventModel.find({
+  async findByTimeRange(startTime, endTime, options = {}) {
+    const query = {
       timestamp: { $gte: startTime, $lte: endTime },
-    })
+    };
+    if (options && options.projectId !== undefined) {
+      query.projectId = options.projectId;
+    }
+    const docs = await TelemetryEventModel.find(query)
       .sort({ timestamp: -1 })
       .lean();
     return docs.map((doc) => this._toDomain(doc));
   }
 
   async findByService(serviceName, options = {}) {
-    const { role = 'any', limit = 100 } = options;
+    const { role = 'any', limit = 100, projectId } = options;
 
     let query;
     if (role === 'source') {
@@ -63,6 +69,9 @@ class MongoTelemetryRepository extends TelemetryRepository {
       query = {
         $or: [{ sourceService: serviceName }, { targetService: serviceName }],
       };
+    }
+    if (projectId !== undefined) {
+      query.projectId = projectId;
     }
 
     const docs = await TelemetryEventModel.find(query)
@@ -79,8 +88,9 @@ class MongoTelemetryRepository extends TelemetryRepository {
     return docs.map((doc) => this._toDomain(doc));
   }
 
-  async deleteAll() {
-    await TelemetryEventModel.deleteMany({});
+  async deleteAll(projectId) {
+    const query = projectId ? { projectId } : {};
+    await TelemetryEventModel.deleteMany(query);
   }
 }
 

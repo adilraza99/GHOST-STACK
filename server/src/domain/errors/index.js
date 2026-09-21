@@ -61,10 +61,33 @@ class EntityNotFoundError extends DomainError {
   }
 }
 
+/**
+ * Thrown when an authentication attempt fails or credentials are missing/invalid.
+ */
+class UnauthorizedError extends DomainError {
+  constructor(message = 'Unauthorized') {
+    super(message, 'UNAUTHORIZED');
+    this.name = 'UnauthorizedError';
+  }
+}
+
+/**
+ * Thrown when an authenticated client attempts an operation without sufficient permission or cross-project access.
+ */
+class ForbiddenError extends DomainError {
+  constructor(message = 'Forbidden') {
+    super(message, 'FORBIDDEN');
+    this.name = 'ForbiddenError';
+  }
+}
+
 module.exports = {
   DomainError,
   ValidationError,
   InvalidEnumError,
   InvalidStateError,
   EntityNotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
 };
+

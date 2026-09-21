@@ -10,6 +10,7 @@ class MongoDependencyRepository extends DependencyRepository {
     if (!doc) return null;
     return new Dependency({
       dependencyId: doc.dependencyId,
+      projectId: doc.projectId || 'project-default',
       sourceServiceId: doc.sourceServiceId,
       targetServiceId: doc.targetServiceId,
       dependencyType: doc.dependencyType,
@@ -26,30 +27,38 @@ class MongoDependencyRepository extends DependencyRepository {
     return this._toDomain(doc);
   }
 
-  async findBySource(sourceServiceId) {
-    const docs = await DependencyModel.find({ sourceServiceId }).lean();
+  async findBySource(sourceServiceId, projectId) {
+    const query = { sourceServiceId };
+    if (projectId !== undefined) query.projectId = projectId;
+    const docs = await DependencyModel.find(query).lean();
     return docs.map((doc) => this._toDomain(doc));
   }
 
-  async findByTarget(targetServiceId) {
-    const docs = await DependencyModel.find({ targetServiceId }).lean();
+  async findByTarget(targetServiceId, projectId) {
+    const query = { targetServiceId };
+    if (projectId !== undefined) query.projectId = projectId;
+    const docs = await DependencyModel.find(query).lean();
     return docs.map((doc) => this._toDomain(doc));
   }
 
-  async findAll() {
-    const docs = await DependencyModel.find({}).lean();
+  async findAll(filter = {}) {
+    const query = {};
+    if (filter && filter.projectId !== undefined) query.projectId = filter.projectId;
+    const docs = await DependencyModel.find(query).lean();
     return docs.map((doc) => this._toDomain(doc));
   }
 
   /**
-   * Upserts a dependency by composite key (source+target+type).
+   * Upserts a dependency by composite key (projectId+source+target+type).
    * Increments counters atomically. Preserves firstSeenAt on insert.
    *
    * @param {Dependency} dependency
    * @param {object} [counters] - { failed: boolean }
    */
   async upsert(dependency, counters = {}) {
+    const projectId = dependency.projectId || 'project-default';
     const filter = {
+      projectId,
       sourceServiceId: dependency.sourceServiceId,
       targetServiceId: dependency.targetServiceId,
       dependencyType: dependency.dependencyType,
@@ -65,6 +74,7 @@ class MongoDependencyRepository extends DependencyRepository {
       {
         $setOnInsert: {
           dependencyId: dependency.dependencyId,
+          projectId,
           firstSeenAt: dependency.firstSeenAt,
         },
         $set: {
@@ -73,7 +83,7 @@ class MongoDependencyRepository extends DependencyRepository {
         },
         $inc: incrementOps,
       },
-      { upsert: true, returnDocument: "after", lean: true }
+      { upsert: true, returnDocument: 'after', lean: true }
     );
     return this._toDomain(doc);
   }
@@ -81,6 +91,7 @@ class MongoDependencyRepository extends DependencyRepository {
   async save(dependency) {
     const doc = await DependencyModel.create({
       dependencyId: dependency.dependencyId,
+      projectId: dependency.projectId || 'project-default',
       sourceServiceId: dependency.sourceServiceId,
       targetServiceId: dependency.targetServiceId,
       dependencyType: dependency.dependencyType,
@@ -93,8 +104,9 @@ class MongoDependencyRepository extends DependencyRepository {
     return this._toDomain(doc);
   }
 
-  async deleteAll() {
-    await DependencyModel.deleteMany({});
+  async deleteAll(projectId) {
+    const query = projectId ? { projectId } : {};
+    await DependencyModel.deleteMany(query);
   }
 }
 

@@ -4,6 +4,7 @@ const { z } = require('zod');
  * POST /api/telemetry — single telemetry event
  */
 const telemetrySchema = z.object({
+  projectId: z.string().optional(),
   sourceService: z.string().min(1, 'sourceService is required'),
   timestamp: z.string().or(z.date()).optional(),
   targetService: z.string().optional(),

@@ -1,9 +1,10 @@
 const request = require('supertest');
 const mongoose = require('mongoose');
 const { createTestApp } = require('../helpers/testApp');
+const ApiKey = require('../../src/domain/entities/ApiKey');
 
 describe('API Integration Tests', () => {
-  let app, container;
+  let app, container, testApiKey;
 
   beforeAll(async () => {
     const testUri = process.env.MONGO_URI || 'mongodb://localhost:27017/ghoststack-test';
@@ -19,6 +20,15 @@ describe('API Integration Tests', () => {
     await container.incidentRepository.deleteAll();
     await container.incidentEventRepository.deleteAll();
     await container.deploymentRepository.deleteAll();
+    await container.apiKeyRepository.deleteAll();
+
+    // Seed valid API key for project-default
+    const { apiKey, plaintextKey } = ApiKey.generate({
+      projectId: 'project-default',
+      name: 'Integration Test Key',
+    });
+    await container.apiKeyRepository.save(apiKey);
+    testApiKey = plaintextKey;
   });
 
   afterAll(async () => {
@@ -37,11 +47,14 @@ describe('API Integration Tests', () => {
     });
 
     it('should return services after telemetry ingestion', async () => {
-      await request(app).post('/api/telemetry').send({
-        sourceService: 'checkout',
-        targetService: 'payment',
-        statusCode: 200,
-      });
+      await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'checkout',
+          targetService: 'payment',
+          statusCode: 200,
+        });
 
       const res = await request(app).get('/api/services');
       expect(res.status).toBe(200);
@@ -60,10 +73,13 @@ describe('API Integration Tests', () => {
 
     it('should return service by ID', async () => {
       // Create a service via telemetry
-      await request(app).post('/api/telemetry').send({
-        sourceService: 'auth-service',
-        statusCode: 200,
-      });
+      await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'auth-service',
+          statusCode: 200,
+        });
 
       const services = await request(app).get('/api/services');
       const serviceId = services.body.data[0].serviceId;
@@ -84,11 +100,14 @@ describe('API Integration Tests', () => {
     });
 
     it('should return dependencies after telemetry', async () => {
-      await request(app).post('/api/telemetry').send({
-        sourceService: 'checkout',
-        targetService: 'payment',
-        statusCode: 200,
-      });
+      await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'checkout',
+          targetService: 'payment',
+          statusCode: 200,
+        });
 
       const res = await request(app).get('/api/dependencies');
       expect(res.status).toBe(200);
@@ -98,11 +117,14 @@ describe('API Integration Tests', () => {
 
   describe('GET /api/dependencies/graph', () => {
     it('should return graph with stats', async () => {
-      await request(app).post('/api/telemetry').send({
-        sourceService: 'checkout',
-        targetService: 'payment',
-        statusCode: 200,
-      });
+      await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'checkout',
+          targetService: 'payment',
+          statusCode: 200,
+        });
 
       const res = await request(app).get('/api/dependencies/graph');
       expect(res.status).toBe(200);
@@ -116,14 +138,17 @@ describe('API Integration Tests', () => {
 
   describe('POST /api/telemetry', () => {
     it('should accept valid telemetry and return 201', async () => {
-      const res = await request(app).post('/api/telemetry').send({
-        sourceService: 'checkout',
-        targetService: 'payment',
-        statusCode: 200,
-        latencyMs: 50,
-        method: 'POST',
-        endpoint: '/api/charge',
-      });
+      const res = await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'checkout',
+          targetService: 'payment',
+          statusCode: 200,
+          latencyMs: 50,
+          method: 'POST',
+          endpoint: '/api/charge',
+        });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -134,9 +159,12 @@ describe('API Integration Tests', () => {
     });
 
     it('should reject missing sourceService with 400', async () => {
-      const res = await request(app).post('/api/telemetry').send({
-        statusCode: 200,
-      });
+      const res = await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          statusCode: 200,
+        });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -144,20 +172,26 @@ describe('API Integration Tests', () => {
     });
 
     it('should reject invalid statusCode', async () => {
-      const res = await request(app).post('/api/telemetry').send({
-        sourceService: 'test',
-        statusCode: 9999,
-      });
+      const res = await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'test',
+          statusCode: 9999,
+        });
 
       expect(res.status).toBe(400);
       expect(res.body.error.code).toBe('VALIDATION_ERROR');
     });
 
     it('should handle telemetry without target (no dependency created)', async () => {
-      const res = await request(app).post('/api/telemetry').send({
-        sourceService: 'standalone',
-        statusCode: 200,
-      });
+      const res = await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'standalone',
+          statusCode: 200,
+        });
 
       expect(res.status).toBe(201);
       expect(res.body.data.targetService).toBeNull();
@@ -167,6 +201,7 @@ describe('API Integration Tests', () => {
     it('should include request ID in response', async () => {
       const res = await request(app)
         .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
         .set('X-Request-ID', 'test-req-456')
         .send({ sourceService: 'test', statusCode: 200 });
 
@@ -176,12 +211,15 @@ describe('API Integration Tests', () => {
 
   describe('POST /api/telemetry/batch', () => {
     it('should accept batch telemetry and return 201', async () => {
-      const res = await request(app).post('/api/telemetry/batch').send({
-        events: [
-          { sourceService: 'checkout', targetService: 'payment', statusCode: 200 },
-          { sourceService: 'payment', targetService: 'db', statusCode: 200 },
-        ],
-      });
+      const res = await request(app)
+        .post('/api/telemetry/batch')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          events: [
+            { sourceService: 'checkout', targetService: 'payment', statusCode: 200 },
+            { sourceService: 'payment', targetService: 'db', statusCode: 200 },
+          ],
+        });
 
       expect(res.status).toBe(201);
       expect(res.body.data.processed).toBe(2);
@@ -189,17 +227,23 @@ describe('API Integration Tests', () => {
     });
 
     it('should reject empty batch', async () => {
-      const res = await request(app).post('/api/telemetry/batch').send({
-        events: [],
-      });
+      const res = await request(app)
+        .post('/api/telemetry/batch')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          events: [],
+        });
 
       expect(res.status).toBe(400);
     });
 
     it('should reject malformed batch', async () => {
-      const res = await request(app).post('/api/telemetry/batch').send({
-        events: 'not-an-array',
-      });
+      const res = await request(app)
+        .post('/api/telemetry/batch')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          events: 'not-an-array',
+        });
 
       expect(res.status).toBe(400);
     });
@@ -216,11 +260,14 @@ describe('API Integration Tests', () => {
 
     it('should return blast radius for a valid service', async () => {
       // Create services via telemetry
-      await request(app).post('/api/telemetry').send({
-        sourceService: 'checkout',
-        targetService: 'payment',
-        statusCode: 200,
-      });
+      await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'checkout',
+          targetService: 'payment',
+          statusCode: 200,
+        });
 
       const services = await request(app).get('/api/services');
       const paymentSvc = services.body.data.find((s) => s.name === 'payment');
@@ -344,20 +391,32 @@ describe('API Integration Tests', () => {
   // ─── DEMO ──────────────────────────────────────────────────────
 
   describe('POST /api/demo/reset', () => {
-    it('should clear all data', async () => {
-      // Create some data first
-      await request(app).post('/api/telemetry').send({
-        sourceService: 'test',
-        statusCode: 200,
-      });
+    it('should clear demo data while leaving external projects untouched', async () => {
+      // 1. Create demo data via demo scenario
+      await request(app).post('/api/demo/scenarios/normal-traffic');
+      const demoServices = await request(app).get('/api/services');
+      expect(demoServices.body.data.length).toBeGreaterThan(0);
 
+      // 2. Create external project data via authenticated telemetry
+      await request(app)
+        .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
+        .send({
+          sourceService: 'external-customer-service',
+          statusCode: 200,
+        });
+
+      // 3. Reset demo data
       const resetRes = await request(app).post('/api/demo/reset').send({});
       expect(resetRes.status).toBe(200);
       expect(resetRes.body.data.message).toContain('cleared');
 
-      // Verify data is gone
-      const services = await request(app).get('/api/services');
-      expect(services.body.data).toEqual([]);
+      // 4. Verify demo services are cleared but external-customer-service remains intact!
+      const remainingServices = await request(app).get('/api/services');
+      const serviceNames = remainingServices.body.data.map((s) => s.name);
+      expect(serviceNames).toContain('external-customer-service');
+      expect(serviceNames).not.toContain('frontend');
+      expect(serviceNames).not.toContain('api-gateway');
     });
   });
 
@@ -390,6 +449,7 @@ describe('API Integration Tests', () => {
     it('should return validation error for malformed JSON', async () => {
       const res = await request(app)
         .post('/api/telemetry')
+        .set('X-GhostStack-Key', testApiKey)
         .set('Content-Type', 'application/json')
         .send('{ invalid json }');
 

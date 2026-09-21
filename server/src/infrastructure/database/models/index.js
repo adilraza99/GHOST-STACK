@@ -4,6 +4,7 @@ const TelemetryEventModel = require('./TelemetryEventModel');
 const IncidentModel = require('./IncidentModel');
 const IncidentEventModel = require('./IncidentEventModel');
 const DeploymentModel = require('./DeploymentModel');
+const ApiKeyModel = require('./ApiKeyModel');
 
 module.exports = {
   ServiceModel,
@@ -12,4 +13,6 @@ module.exports = {
   IncidentModel,
   IncidentEventModel,
   DeploymentModel,
+  ApiKeyModel,
 };
+

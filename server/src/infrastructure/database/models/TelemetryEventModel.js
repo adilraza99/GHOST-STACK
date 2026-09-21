@@ -8,6 +8,12 @@ const telemetryEventSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      default: 'project-default',
+      index: true,
+    },
     timestamp: {
       type: Date,
       required: true,
@@ -59,14 +65,18 @@ const telemetryEventSchema = new mongoose.Schema(
   }
 );
 
-// Time-range queries (most common access pattern for telemetry)
+// Project-scoped query indexes
+telemetryEventSchema.index({ projectId: 1, environment: 1, timestamp: -1 });
+telemetryEventSchema.index({ projectId: 1, timestamp: -1 });
+telemetryEventSchema.index({ projectId: 1, sourceService: 1, timestamp: -1 });
+telemetryEventSchema.index({ projectId: 1, targetService: 1, timestamp: -1 });
+telemetryEventSchema.index({ projectId: 1, traceId: 1 });
+
+// Global/fallback indexes
 telemetryEventSchema.index({ timestamp: -1 });
-// Service-specific telemetry lookup
 telemetryEventSchema.index({ sourceService: 1, timestamp: -1 });
 telemetryEventSchema.index({ targetService: 1, timestamp: -1 });
-// Trace correlation
 telemetryEventSchema.index({ traceId: 1 });
-// Environment filtering
 telemetryEventSchema.index({ environment: 1, timestamp: -1 });
 
 const TelemetryEventModel = mongoose.model('TelemetryEvent', telemetryEventSchema);

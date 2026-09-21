@@ -3,6 +3,7 @@ const { requestLogger } = require('./requestLogger');
 const { errorHandler } = require('./errorHandler');
 const { notFoundHandler } = require('./notFound');
 const { validate, validateQuery } = require('./validate');
+const { createAuthMiddleware } = require('./authMiddleware');
 
 module.exports = {
   requestIdMiddleware,
@@ -11,4 +12,6 @@ module.exports = {
   notFoundHandler,
   validate,
   validateQuery,
+  createAuthMiddleware,
 };
+

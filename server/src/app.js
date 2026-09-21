@@ -33,7 +33,7 @@ function createApp(container) {
   app.use(cors({
     origin: config.isDevelopment() ? '*' : process.env.CORS_ORIGIN,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-GhostStack-Key'],
   }));
 
   // --- Rate limiting ---

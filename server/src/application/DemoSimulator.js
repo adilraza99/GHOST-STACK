@@ -355,14 +355,15 @@ class DemoSimulator {
     return SCENARIOS;
   }
 
-  /** Clear all data. */
+  /** Clear demo data only (strictly restricted to project-demo namespace). */
   async reset() {
-    await this.serviceRepository.deleteAll();
-    await this.dependencyRepository.deleteAll();
-    await this.telemetryRepository.deleteAll();
-    await this.incidentRepository.deleteAll();
-    await this.incidentEventRepository.deleteAll();
-    await this.deploymentRepository.deleteAll();
+    const demoProjectId = 'project-demo';
+    await this.serviceRepository.deleteAll(demoProjectId);
+    await this.dependencyRepository.deleteAll(demoProjectId);
+    await this.telemetryRepository.deleteAll(demoProjectId);
+    await this.incidentRepository.deleteAll(demoProjectId);
+    await this.incidentEventRepository.deleteAll(demoProjectId);
+    await this.deploymentRepository.deleteAll(demoProjectId);
   }
 
   /**
@@ -429,6 +430,7 @@ class DemoSimulator {
         previousVersion: '1.2.0',
         newVersion: '1.3.0',
         environment: 'production',
+        metadata: { projectId: 'project-demo' },
       });
 
       analysis = await this.deploymentAnalysisService.analyze({
@@ -510,6 +512,7 @@ class DemoSimulator {
         previousVersion: '1.2.0',
         newVersion: '1.3.0',
         environment: 'production',
+        metadata: { projectId: 'project-demo' },
       });
 
       impactAnalysis = await this.deploymentAnalysisService.analyze({
@@ -546,7 +549,10 @@ class DemoSimulator {
   async _ingestEvents(events) {
     const results = [];
     for (const eventData of events) {
-      const result = await this.telemetryProcessingService.process(eventData);
+      const result = await this.telemetryProcessingService.process({
+        ...eventData,
+        projectId: 'project-demo',
+      });
       results.push(result);
     }
     return results;

@@ -46,8 +46,9 @@ class MongoIncidentEventRepository extends IncidentEventRepository {
     return docs.map((doc) => this._toDomain(doc));
   }
 
-  async deleteAll() {
-    await IncidentEventModel.deleteMany({});
+  async deleteAll(projectId) {
+    const query = projectId ? { $or: [{ projectId }, { 'metadata.projectId': projectId }] } : {};
+    await IncidentEventModel.deleteMany(query);
   }
 }
 

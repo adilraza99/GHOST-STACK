@@ -47,6 +47,7 @@ class TelemetryProcessingService {
     // 3. Upsert source service
     const sourceService = await this.serviceRepository.upsert(
       new Service({
+        projectId: event.projectId,
         name: event.sourceService,
         environment: event.environment,
       })
@@ -57,6 +58,7 @@ class TelemetryProcessingService {
     if (event.targetService) {
       targetService = await this.serviceRepository.upsert(
         new Service({
+          projectId: event.projectId,
           name: event.targetService,
           environment: event.environment,
         })
@@ -69,6 +71,7 @@ class TelemetryProcessingService {
       const failed = this._isFailure(event);
       dependency = await this.dependencyRepository.upsert(
         new Dependency({
+          projectId: event.projectId,
           sourceServiceId: sourceService.serviceId,
           targetServiceId: targetService.serviceId,
           dependencyType: data.dependencyType || 'sync',
@@ -80,6 +83,7 @@ class TelemetryProcessingService {
     // 6. Publish event through EventBus
     await this.eventBus.publish('telemetry.processed', {
       event: event.toJSON(),
+      projectId: event.projectId,
       sourceServiceId: sourceService.serviceId,
       targetServiceId: targetService ? targetService.serviceId : null,
     });

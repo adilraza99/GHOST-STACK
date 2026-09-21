@@ -49,8 +49,9 @@ class MongoDeploymentRepository extends DeploymentRepository {
     return this._toDomain(doc);
   }
 
-  async deleteAll() {
-    await DeploymentModel.deleteMany({});
+  async deleteAll(projectId) {
+    const query = projectId ? { $or: [{ projectId }, { 'metadata.projectId': projectId }] } : {};
+    await DeploymentModel.deleteMany(query);
   }
 }
 

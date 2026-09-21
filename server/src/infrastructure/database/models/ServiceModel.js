@@ -8,6 +8,12 @@ const serviceSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      default: 'project-default',
+      index: true,
+    },
     name: {
       type: String,
       required: true,
@@ -32,7 +38,9 @@ const serviceSchema = new mongoose.Schema(
   }
 );
 
-// Compound index for name + environment lookups
+// Compound index for project + environment + name lookups
+serviceSchema.index({ projectId: 1, environment: 1, name: 1 });
+serviceSchema.index({ projectId: 1, name: 1 });
 serviceSchema.index({ name: 1, environment: 1 });
 
 const ServiceModel = mongoose.model('Service', serviceSchema);

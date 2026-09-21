@@ -5,12 +5,20 @@ const {
   InvalidEnumError,
   InvalidStateError,
   EntityNotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
 } = require('../../../domain/errors');
 
 /**
  * Maps domain/application errors to HTTP status codes and error codes.
  */
 function mapDomainError(err) {
+  if (err instanceof UnauthorizedError) {
+    return { statusCode: 401, code: 'UNAUTHORIZED', message: err.message, expose: true };
+  }
+  if (err instanceof ForbiddenError) {
+    return { statusCode: 403, code: 'FORBIDDEN', message: err.message, expose: true };
+  }
   if (err instanceof EntityNotFoundError) {
     return { statusCode: 404, code: 'NOT_FOUND', message: err.message, expose: true };
   }

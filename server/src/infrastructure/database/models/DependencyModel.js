@@ -8,6 +8,12 @@ const dependencySchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      default: 'project-default',
+      index: true,
+    },
     sourceServiceId: {
       type: String,
       required: true,
@@ -48,13 +54,15 @@ const dependencySchema = new mongoose.Schema(
   }
 );
 
-// Composite unique constraint: one dependency per source+target+type
+// Composite unique constraint: one dependency per project+source+target+type
 dependencySchema.index(
-  { sourceServiceId: 1, targetServiceId: 1, dependencyType: 1 },
+  { projectId: 1, sourceServiceId: 1, targetServiceId: 1, dependencyType: 1 },
   { unique: true }
 );
 
 // Query indexes for graph traversal
+dependencySchema.index({ projectId: 1, sourceServiceId: 1 });
+dependencySchema.index({ projectId: 1, targetServiceId: 1 });
 dependencySchema.index({ sourceServiceId: 1 });
 dependencySchema.index({ targetServiceId: 1 });
 

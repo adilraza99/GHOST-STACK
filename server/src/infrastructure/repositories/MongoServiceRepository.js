@@ -16,6 +16,7 @@ class MongoServiceRepository extends ServiceRepository {
     if (!doc) return null;
     return new Service({
       serviceId: doc.serviceId,
+      projectId: doc.projectId || 'project-default',
       name: doc.name,
       environment: doc.environment,
       version: doc.version,
@@ -30,23 +31,34 @@ class MongoServiceRepository extends ServiceRepository {
     return this._toDomain(doc);
   }
 
-  async findByName(name, environment) {
+  async findByName(name, environment, projectId) {
     const query = { name };
     if (environment !== undefined) {
       query.environment = environment;
+    }
+    if (projectId !== undefined) {
+      query.projectId = projectId;
     }
     const doc = await ServiceModel.findOne(query).lean();
     return this._toDomain(doc);
   }
 
-  async findAll() {
-    const docs = await ServiceModel.find({}).sort({ name: 1 }).lean();
+  async findAll(filter = {}) {
+    const query = {};
+    if (filter && filter.projectId !== undefined) {
+      query.projectId = filter.projectId;
+    }
+    if (filter && filter.environment !== undefined) {
+      query.environment = filter.environment;
+    }
+    const docs = await ServiceModel.find(query).sort({ name: 1 }).lean();
     return docs.map((doc) => this._toDomain(doc));
   }
 
   async save(service) {
     const doc = await ServiceModel.create({
       serviceId: service.serviceId,
+      projectId: service.projectId || 'project-default',
       name: service.name,
       environment: service.environment,
       version: service.version,
@@ -56,24 +68,31 @@ class MongoServiceRepository extends ServiceRepository {
   }
 
   async upsert(service) {
+    const projectId = service.projectId || 'project-default';
     const doc = await ServiceModel.findOneAndUpdate(
-      { name: service.name, environment: service.environment },
+      {
+        projectId,
+        name: service.name,
+        environment: service.environment,
+      },
       {
         $setOnInsert: { serviceId: service.serviceId },
         $set: {
+          projectId,
           name: service.name,
           environment: service.environment,
           version: service.version,
           metadata: service.metadata,
         },
       },
-      { upsert: true, returnDocument: "after", lean: true }
+      { upsert: true, returnDocument: 'after', lean: true }
     );
     return this._toDomain(doc);
   }
 
-  async deleteAll() {
-    await ServiceModel.deleteMany({});
+  async deleteAll(projectId) {
+    const query = projectId ? { projectId } : {};
+    await ServiceModel.deleteMany(query);
   }
 }
 

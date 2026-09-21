@@ -43,6 +43,9 @@ class Dependency {
     validateDependencyType(props.dependencyType);
 
     this.dependencyId = props.dependencyId || uuidv4();
+    this.projectId = (props.projectId && typeof props.projectId === 'string' && props.projectId.trim().length > 0)
+      ? props.projectId.trim()
+      : 'project-default';
     this.sourceServiceId = props.sourceServiceId;
     this.targetServiceId = props.targetServiceId;
     this.dependencyType = props.dependencyType;
@@ -82,9 +85,17 @@ class Dependency {
     return `${this.sourceServiceId}:${this.targetServiceId}:${this.dependencyType}`;
   }
 
+  /**
+   * Returns the project-scoped composite key.
+   */
+  getScopedKey() {
+    return `${this.projectId}:${this.sourceServiceId}:${this.targetServiceId}:${this.dependencyType}`;
+  }
+
   toJSON() {
     return {
       dependencyId: this.dependencyId,
+      projectId: this.projectId,
       sourceServiceId: this.sourceServiceId,
       targetServiceId: this.targetServiceId,
       dependencyType: this.dependencyType,
