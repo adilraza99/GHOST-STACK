@@ -198,13 +198,76 @@ class FakeIncidentEventRepository {
 
 class FakeDeploymentRepository {
   constructor() { this._store = []; }
-  async findById(id) { return this._store.find((d) => d.deploymentId === id) || null; }
-  async findByService(serviceId) {
+  async findById(arg1, arg2) {
+    if (arg2 !== undefined) {
+      const projectId = arg1;
+      const deploymentId = arg2;
+      return this._store.find((d) =>
+        d.deploymentId === deploymentId &&
+        (d.projectId || d.metadata?.projectId || 'project-default') === projectId
+      ) || null;
+    }
+    return this._store.find((d) => d.deploymentId === arg1) || null;
+  }
+  async findByProject(projectId, filters = {}) {
     return this._store
-      .filter((d) => d.serviceId === serviceId)
+      .filter((d) => {
+        const proj = d.projectId || d.metadata?.projectId || 'project-default';
+        if (proj !== projectId) return false;
+        if (filters.serviceId && d.serviceId !== filters.serviceId) return false;
+        if (filters.environment && d.environment !== filters.environment) return false;
+        if (filters.startTime && d.deployedAt < new Date(filters.startTime)) return false;
+        if (filters.endTime && d.deployedAt > new Date(filters.endTime)) return false;
+        return true;
+      })
+      .sort((a, b) => b.deployedAt.getTime() - a.deployedAt.getTime())
+      .slice(0, filters.limit || undefined);
+  }
+  async findByService(arg1, arg2, arg3) {
+    if (arg2 !== undefined && typeof arg2 === 'string') {
+      const projectId = arg1;
+      const serviceId = arg2;
+      const filters = arg3 || {};
+      return this._store
+        .filter((d) => {
+          const proj = d.projectId || d.metadata?.projectId || 'project-default';
+          if (proj !== projectId) return false;
+          if (d.serviceId !== serviceId) return false;
+          if (filters.environment && d.environment !== filters.environment) return false;
+          if (filters.startTime && d.deployedAt < new Date(filters.startTime)) return false;
+          if (filters.endTime && d.deployedAt > new Date(filters.endTime)) return false;
+          return true;
+        })
+        .sort((a, b) => b.deployedAt.getTime() - a.deployedAt.getTime())
+        .slice(0, filters.limit || undefined);
+    }
+    return this._store
+      .filter((d) => d.serviceId === arg1)
       .sort((a, b) => b.deployedAt.getTime() - a.deployedAt.getTime());
   }
-  async findAll() { return [...this._store]; }
+  async findRecent(projectId, options = {}) {
+    return this.findByProject(projectId, { limit: options.limit || 10, ...options });
+  }
+  async findBetween(projectId, startTime, endTime, filters = {}) {
+    return this.findByProject(projectId, {
+      ...filters,
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
+    });
+  }
+  async findAll(filter = {}) {
+    return this._store
+      .filter((d) => {
+        if (filter.projectId) {
+          const proj = d.projectId || d.metadata?.projectId || 'project-default';
+          if (proj !== filter.projectId) return false;
+        }
+        if (filter.serviceId && d.serviceId !== filter.serviceId) return false;
+        if (filter.environment && d.environment !== filter.environment) return false;
+        return true;
+      })
+      .sort((a, b) => b.deployedAt.getTime() - a.deployedAt.getTime());
+  }
   async save(dep) {
     this._store.push(dep);
     return dep;

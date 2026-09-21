@@ -198,8 +198,12 @@ GhostStack includes a deterministic Demo Simulator built directly into the appli
 - `GET /api/dependencies/graph` - Get the complete dependency graph and statistics.
 - `GET /api/blast-radius/:serviceId` - Calculate the blast radius of a failing service.
 
-#### Deployments
-- `POST /api/deployments` - Record a new deployment.
+#### Deployments & Change Correlation
+- `POST /api/projects/:projectId/deployments` - Record a deployment scoped to a project. Supports initial deployments (`previousVersion: null`).
+- `GET /api/projects/:projectId/deployments` - List deployments for a project with optional filters (`serviceId`, `environment`, `startTime`, `endTime`, `limit`).
+- `GET /api/projects/:projectId/deployments/:deploymentId` - Get a single deployment detail.
+- `GET /api/projects/:projectId/incidents/:incidentId/correlations` - Correlate deployments within a 30-minute window of incident start, classifying direct, upstream, and downstream changes with structured evidence.
+- `POST /api/deployments` - Legacy/default deployment endpoint (records to `project-default`).
 - `POST /api/deployments/analyze` - Analyze the potential impact of a proposed deployment.
 
 #### Incidents

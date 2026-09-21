@@ -30,20 +30,21 @@ class DependencyGraphService {
 
   /**
    * Builds (or rebuilds) the graph from current repository data.
+   * @param {object} [filter={}] - Optional filter (e.g. { projectId })
    */
-  async build() {
+  async build(filter = {}) {
     this._outgoing.clear();
     this._incoming.clear();
     this._nodes.clear();
 
-    const services = await this.serviceRepository.findAll();
+    const services = await this.serviceRepository.findAll(filter);
     for (const svc of services) {
       this._nodes.add(svc.serviceId);
       this._outgoing.set(svc.serviceId, new Set());
       this._incoming.set(svc.serviceId, new Set());
     }
 
-    const dependencies = await this.dependencyRepository.findAll();
+    const dependencies = await this.dependencyRepository.findAll(filter);
     for (const dep of dependencies) {
       // Ensure both endpoints are registered as nodes
       if (!this._nodes.has(dep.sourceServiceId)) {

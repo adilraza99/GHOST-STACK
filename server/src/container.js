@@ -17,6 +17,7 @@ const {
   IncidentReplayService,
   DeploymentAnalysisService,
   DeploymentService,
+  ChangeCorrelationService,
   DemoSimulator,
   ProjectService,
   ApiKeyService,
@@ -97,6 +98,15 @@ function createContainer() {
 
   const deploymentService = new DeploymentService({
     deploymentRepository,
+    projectRepository,
+  });
+
+  const changeCorrelationService = new ChangeCorrelationService({
+    deploymentRepository,
+    incidentRepository,
+    serviceRepository,
+    graphService,
+    projectRepository,
   });
 
   const demoSimulator = new DemoSimulator({
@@ -133,6 +143,7 @@ function createContainer() {
     incidentReplayService,
     deploymentAnalysisService,
     deploymentService,
+    changeCorrelationService,
     demoSimulator,
     projectService,
     apiKeyService,

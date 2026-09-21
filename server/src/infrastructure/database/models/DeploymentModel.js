@@ -8,13 +8,19 @@ const deploymentSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      default: 'project-default',
+      index: true,
+    },
     serviceId: {
       type: String,
       required: true,
     },
     previousVersion: {
       type: String,
-      required: true,
+      default: null,
     },
     newVersion: {
       type: String,
@@ -38,6 +44,11 @@ const deploymentSchema = new mongoose.Schema(
     collection: 'deployments',
   }
 );
+
+// Project deployment history & correlation indexes
+deploymentSchema.index({ projectId: 1, deployedAt: -1 });
+deploymentSchema.index({ projectId: 1, serviceId: 1, deployedAt: -1 });
+deploymentSchema.index({ projectId: 1, environment: 1, deployedAt: -1 });
 
 // Service deployment history
 deploymentSchema.index({ serviceId: 1, deployedAt: -1 });

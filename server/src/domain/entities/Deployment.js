@@ -11,8 +11,9 @@ class Deployment {
   /**
    * @param {object} props
    * @param {string} [props.deploymentId] - UUID (auto-generated if not provided)
-   * @param {string} props.serviceId - UUID of the service being deployed (required)
-   * @param {string} props.previousVersion - Version before deployment (required)
+   * @param {string} [props.projectId='project-default'] - Project boundary
+   * @param {string} props.serviceId - UUID or name of the service being deployed (required)
+   * @param {string|null} [props.previousVersion] - Version before deployment (null for first deployment)
    * @param {string} props.newVersion - Version being deployed (required)
    * @param {Date|string} [props.deployedAt] - When the deployment occurred
    * @param {string} [props.environment] - Deployment environment
@@ -22,16 +23,21 @@ class Deployment {
     if (!props) {
       throw new ValidationError('props', 'Deployment properties are required');
     }
-    if (!props.serviceId) {
+    if (props.projectId !== undefined && (typeof props.projectId !== 'string' || props.projectId.trim().length === 0)) {
+      throw new ValidationError('projectId', 'Project ID cannot be empty');
+    }
+    if (!props.serviceId || typeof props.serviceId !== 'string' || props.serviceId.trim().length === 0) {
       throw new ValidationError('serviceId', 'Service ID is required');
     }
-    if (!props.previousVersion) {
-      throw new ValidationError('previousVersion', 'Previous version is required');
-    }
-    if (!props.newVersion) {
+    if (!props.newVersion || typeof props.newVersion !== 'string' || props.newVersion.trim().length === 0) {
       throw new ValidationError('newVersion', 'New version is required');
     }
-    if (props.previousVersion === props.newVersion) {
+    const prev = props.previousVersion !== undefined && props.previousVersion !== null
+      ? String(props.previousVersion).trim()
+      : null;
+    const next = String(props.newVersion).trim();
+
+    if (prev !== null && prev === next) {
       throw new ValidationError(
         'newVersion',
         'New version must be different from previous version'
@@ -52,9 +58,10 @@ class Deployment {
     }
 
     this.deploymentId = props.deploymentId || uuidv4();
-    this.serviceId = props.serviceId;
-    this.previousVersion = props.previousVersion;
-    this.newVersion = props.newVersion;
+    this.projectId = props.projectId ? props.projectId.trim() : (props.metadata?.projectId || 'project-default');
+    this.serviceId = props.serviceId.trim();
+    this.previousVersion = prev;
+    this.newVersion = next;
     this.deployedAt = deployedAt;
     this.environment = props.environment || null;
     this.metadata = props.metadata ? { ...props.metadata } : {};
@@ -63,6 +70,7 @@ class Deployment {
   toJSON() {
     return {
       deploymentId: this.deploymentId,
+      projectId: this.projectId,
       serviceId: this.serviceId,
       previousVersion: this.previousVersion,
       newVersion: this.newVersion,

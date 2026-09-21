@@ -27,15 +27,27 @@ const telemetryBatchSchema = z.object({
 });
 
 /**
- * POST /api/deployments
+ * POST /api/deployments or POST /api/projects/:projectId/deployments
  */
 const deploymentSchema = z.object({
+  projectId: z.string().optional(),
   serviceId: z.string().min(1, 'serviceId is required'),
-  previousVersion: z.string().min(1, 'previousVersion is required'),
+  previousVersion: z.string().nullable().optional(),
   newVersion: z.string().min(1, 'newVersion is required'),
   environment: z.string().optional(),
   metadata: z.record(z.unknown()).optional(),
 });
+
+/**
+ * GET /api/projects/:projectId/deployments query parameters
+ */
+const listDeploymentsQuerySchema = z.object({
+  serviceId: z.string().optional(),
+  environment: z.string().optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+}).optional();
 
 /**
  * POST /api/deployments/analyze
@@ -83,6 +95,7 @@ module.exports = {
   telemetrySchema,
   telemetryBatchSchema,
   deploymentSchema,
+  listDeploymentsQuerySchema,
   deploymentAnalyzeSchema,
   incidentDetectSchema,
   demoResetSchema,

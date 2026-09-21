@@ -8,6 +8,12 @@ const incidentSchema = new mongoose.Schema(
       unique: true,
       index: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      default: 'project-default',
+      index: true,
+    },
     title: {
       type: String,
       required: true,

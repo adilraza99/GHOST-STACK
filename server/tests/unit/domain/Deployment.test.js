@@ -56,9 +56,26 @@ describe('Deployment Entity', () => {
         .toThrow('Service ID is required');
     });
 
-    it('should throw when previousVersion is missing', () => {
-      expect(() => new Deployment({ serviceId: 'x', newVersion: '2.0' }))
-        .toThrow('Previous version is required');
+    it('should allow previousVersion to be null for first deployment', () => {
+      const dep = new Deployment({
+        serviceId: 'service-uuid-111',
+        previousVersion: null,
+        newVersion: '1.0.0',
+      });
+      expect(dep.previousVersion).toBeNull();
+      expect(dep.newVersion).toBe('1.0.0');
+    });
+
+    it('should default projectId to project-default and accept custom projectId', () => {
+      const dep1 = new Deployment(validProps);
+      expect(dep1.projectId).toBe('project-default');
+
+      const dep2 = new Deployment({ ...validProps, projectId: 'proj_alpha' });
+      expect(dep2.projectId).toBe('proj_alpha');
+    });
+
+    it('should throw when projectId is empty string', () => {
+      expect(() => new Deployment({ ...validProps, projectId: '   ' })).toThrow(ValidationError);
     });
 
     it('should throw when newVersion is missing', () => {
@@ -86,6 +103,7 @@ describe('Deployment Entity', () => {
       const json = dep.toJSON();
 
       expect(json.deploymentId).toBe(dep.deploymentId);
+      expect(json.projectId).toBe('project-default');
       expect(json.serviceId).toBe('service-uuid-111');
       expect(json.previousVersion).toBe('1.7.0');
       expect(json.newVersion).toBe('1.8.0');

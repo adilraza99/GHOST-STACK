@@ -45,6 +45,7 @@ class Incident {
     }
 
     this.incidentId = props.incidentId || uuidv4();
+    this.projectId = props.projectId || props.metadata?.projectId || 'project-default';
     this.title = props.title.trim();
     this.status = status;
     this.severity = props.severity;
@@ -114,6 +115,7 @@ class Incident {
   toJSON() {
     return {
       incidentId: this.incidentId,
+      projectId: this.projectId,
       title: this.title,
       status: this.status,
       severity: this.severity,

@@ -10,6 +10,7 @@ class MongoIncidentRepository extends IncidentRepository {
     if (!doc) return null;
     return new Incident({
       incidentId: doc.incidentId,
+      projectId: doc.projectId || doc.metadata?.projectId || 'project-default',
       title: doc.title,
       status: doc.status,
       severity: doc.severity,
@@ -40,6 +41,7 @@ class MongoIncidentRepository extends IncidentRepository {
   async save(incident) {
     const doc = await IncidentModel.create({
       incidentId: incident.incidentId,
+      projectId: incident.projectId || incident.metadata?.projectId || 'project-default',
       title: incident.title,
       status: incident.status,
       severity: incident.severity,
@@ -58,6 +60,7 @@ class MongoIncidentRepository extends IncidentRepository {
       { incidentId: incident.incidentId },
       {
         $set: {
+          projectId: incident.projectId || incident.metadata?.projectId || 'project-default',
           title: incident.title,
           status: incident.status,
           severity: incident.severity,

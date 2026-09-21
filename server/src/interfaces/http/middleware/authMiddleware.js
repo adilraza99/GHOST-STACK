@@ -14,9 +14,10 @@ const ApiKey = require('../../../domain/entities/ApiKey');
  * @param {import('../../../infrastructure/repositories/ApiKeyRepository')} options.apiKeyRepository
  * @param {import('../../../infrastructure/repositories/ProjectRepository')} [options.projectRepository]
  * @param {string} [options.requiredPermission] - Permission required for this route (e.g. 'telemetry:write')
+ * @param {boolean} [options.optional] - If true, requests without API keys are allowed through
  * @returns {import('express').RequestHandler}
  */
-function createAuthMiddleware({ apiKeyRepository, projectRepository, requiredPermission = 'telemetry:write' }) {
+function createAuthMiddleware({ apiKeyRepository, projectRepository, requiredPermission = 'telemetry:write', optional = false }) {
   if (!apiKeyRepository) {
     throw new Error('apiKeyRepository is required to create authMiddleware');
   }
@@ -33,6 +34,9 @@ function createAuthMiddleware({ apiKeyRepository, projectRepository, requiredPer
     }
 
     if (!presentedKey || typeof presentedKey !== 'string' || presentedKey.trim().length === 0) {
+      if (optional) {
+        return next();
+      }
       return res.status(401).json({
         success: false,
         error: {
