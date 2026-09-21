@@ -178,9 +178,18 @@ GhostStack includes a deterministic Demo Simulator built directly into the appli
 
 ### Endpoints
 
+#### Projects & Developer API Keys
+- `POST /api/projects` - Create a new project namespace (generates URL slug).
+- `GET /api/projects` - List all projects (supports `?status=active|archived`).
+- `GET /api/projects/:projectId` - Get project details.
+- `POST /api/projects/:projectId/archive` - Archive a project (immediately blocks new telemetry ingestion).
+- `POST /api/projects/:projectId/keys` - Generate a new ingestion API key (`gs_live_...`). **Returns the plaintext secret strictly once.** Only the SHA-256 hash is persisted.
+- `GET /api/projects/:projectId/keys` - List safe key metadata (`prefix`, `permissions`, `createdAt`, `revokedAt`). Plaintext and hash are never returned.
+- `POST /api/projects/:projectId/keys/:keyId/revoke` - Revoke an API key immediately.
+
 #### Telemetry
-- `POST /api/telemetry` - Ingest a single telemetry event.
-- `POST /api/telemetry/batch` - Ingest an array of telemetry events.
+- `POST /api/telemetry` - Ingest a single telemetry event. Requires `X-GhostStack-Key` or `Authorization: Bearer <key>` header.
+- `POST /api/telemetry/batch` - Ingest an array of telemetry events. Requires authenticated API key.
 
 #### Services & Dependencies
 - `GET /api/services` - List all discovered services.
@@ -203,7 +212,7 @@ GhostStack includes a deterministic Demo Simulator built directly into the appli
 - `GET /api/demo/scenarios` - List available demo scenarios.
 - `POST /api/demo/scenarios/:scenario` - Execute a specific demo scenario.
 - `POST /api/demo/start` - Alias to run the `complete-incident` scenario.
-- `POST /api/demo/reset` - Clear all data (services, dependencies, telemetry, incidents, etc.).
+- `POST /api/demo/reset` - Clear demo data (scoped strictly to `project-demo`).
 
 #### System
 - `GET /api/health` - Basic health check.

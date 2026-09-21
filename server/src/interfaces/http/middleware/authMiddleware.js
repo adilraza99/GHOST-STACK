@@ -12,10 +12,11 @@ const ApiKey = require('../../../domain/entities/ApiKey');
  *
  * @param {object} options
  * @param {import('../../../infrastructure/repositories/ApiKeyRepository')} options.apiKeyRepository
+ * @param {import('../../../infrastructure/repositories/ProjectRepository')} [options.projectRepository]
  * @param {string} [options.requiredPermission] - Permission required for this route (e.g. 'telemetry:write')
  * @returns {import('express').RequestHandler}
  */
-function createAuthMiddleware({ apiKeyRepository, requiredPermission = 'telemetry:write' }) {
+function createAuthMiddleware({ apiKeyRepository, projectRepository, requiredPermission = 'telemetry:write' }) {
   if (!apiKeyRepository) {
     throw new Error('apiKeyRepository is required to create authMiddleware');
   }
@@ -114,10 +115,43 @@ function createAuthMiddleware({ apiKeyRepository, requiredPermission = 'telemetr
       });
     }
 
-    // 7. Record usage asynchronously (non-blocking)
+    // 7. Check project lifecycle status if projectRepository is configured
+    if (projectRepository && apiKey.projectId !== 'project-default' && apiKey.projectId !== 'project-demo') {
+      try {
+        const project = await projectRepository.findById(apiKey.projectId);
+        if (!project) {
+          return res.status(401).json({
+            success: false,
+            error: {
+              code: 'UNAUTHORIZED',
+              message: 'Project not found',
+            },
+          });
+        }
+        if (project.isArchived()) {
+          return res.status(403).json({
+            success: false,
+            error: {
+              code: 'FORBIDDEN',
+              message: 'Project is archived and cannot accept telemetry',
+            },
+          });
+        }
+      } catch (_err) {
+        return res.status(500).json({
+          success: false,
+          error: {
+            code: 'INTERNAL_ERROR',
+            message: 'Failed to verify project state',
+          },
+        });
+      }
+    }
+
+    // 8. Record usage asynchronously (non-blocking)
     apiKeyRepository.recordUsage(apiKey.keyId).catch(() => {});
 
-    // 8. Attach authenticated project context
+    // 9. Attach authenticated project context
     req.ghostStack = {
       projectId: apiKey.projectId,
       apiKeyId: apiKey.keyId,

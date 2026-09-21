@@ -7,6 +7,7 @@ const {
   EntityNotFoundError,
   UnauthorizedError,
   ForbiddenError,
+  ConflictError,
 } = require('../../../domain/errors');
 
 /**
@@ -24,6 +25,9 @@ function mapDomainError(err) {
   }
   if (err instanceof ValidationError || err instanceof InvalidEnumError) {
     return { statusCode: 400, code: err.code || 'VALIDATION_ERROR', message: err.message, expose: true };
+  }
+  if (err instanceof ConflictError) {
+    return { statusCode: 409, code: 'CONFLICT', message: err.message, expose: true };
   }
   if (err instanceof InvalidStateError) {
     return { statusCode: 409, code: 'INVALID_STATE', message: err.message, expose: true };

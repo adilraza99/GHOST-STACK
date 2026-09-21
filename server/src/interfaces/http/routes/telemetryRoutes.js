@@ -9,6 +9,7 @@ function createTelemetryRoutes(container) {
   const ctrl = createTelemetryController(container);
   const auth = createAuthMiddleware({
     apiKeyRepository: container.apiKeyRepository,
+    projectRepository: container.projectRepository,
     requiredPermission: 'telemetry:write',
   });
 

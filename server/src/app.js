@@ -17,6 +17,7 @@ const { createBlastRadiusRoutes } = require('./interfaces/http/routes/blastRadiu
 const { createIncidentRoutes } = require('./interfaces/http/routes/incidentRoutes');
 const { createDeploymentRoutes } = require('./interfaces/http/routes/deploymentRoutes');
 const { createDemoRoutes } = require('./interfaces/http/routes/demoRoutes');
+const { createProjectRoutes } = require('./interfaces/http/routes/projectRoutes');
 
 /**
  * Creates and configures the Express application.
@@ -69,6 +70,7 @@ function createApp(container) {
   app.use('/api', createIncidentRoutes(container));
   app.use('/api', createDeploymentRoutes(container));
   app.use('/api', createDemoRoutes(container));
+  app.use('/api', createProjectRoutes(container));
 
   // --- Error handling ---
   app.use(notFoundHandler);

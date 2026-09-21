@@ -2,6 +2,7 @@ const request = require('supertest');
 const mongoose = require('mongoose');
 const { createTestApp } = require('../helpers/testApp');
 const ApiKey = require('../../src/domain/entities/ApiKey');
+const Project = require('../../src/domain/entities/Project');
 
 describe('Project Isolation & Ingestion Security Integration Tests', () => {
   let app, container;
@@ -15,6 +16,7 @@ describe('Project Isolation & Ingestion Security Integration Tests', () => {
 
   beforeEach(async () => {
     // Clear all collections between test cases
+    await container.projectRepository.deleteAll();
     await container.serviceRepository.deleteAll();
     await container.dependencyRepository.deleteAll();
     await container.telemetryRepository.deleteAll();
@@ -22,6 +24,20 @@ describe('Project Isolation & Ingestion Security Integration Tests', () => {
     await container.incidentEventRepository.deleteAll();
     await container.deploymentRepository.deleteAll();
     await container.apiKeyRepository.deleteAll();
+
+    // Seed active projects
+    await container.projectRepository.save(new Project({
+      projectId: 'proj_alpha',
+      name: 'Project Alpha',
+      slug: 'proj-alpha',
+      status: 'active',
+    }));
+    await container.projectRepository.save(new Project({
+      projectId: 'proj_beta',
+      name: 'Project Beta',
+      slug: 'proj-beta',
+      status: 'active',
+    }));
 
     // Create Project Alpha key
     const genAlpha = ApiKey.generate({

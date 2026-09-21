@@ -61,6 +61,24 @@ const demoStartSchema = z.object({
   scenario: z.string().optional(),
 }).optional();
 
+/**
+ * POST /api/projects
+ */
+const createProjectSchema = z.object({
+  name: z.string().trim().min(1, 'Project name is required').max(100, 'Project name cannot exceed 100 characters'),
+  slug: z.string().trim().min(1).max(100).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must consist only of lowercase alphanumeric characters and single hyphens').optional(),
+  description: z.string().trim().max(500, 'Description cannot exceed 500 characters').optional(),
+});
+
+/**
+ * POST /api/projects/:projectId/keys
+ */
+const createApiKeySchema = z.object({
+  name: z.string().trim().min(1, 'Key name cannot be empty').max(100, 'Key name cannot exceed 100 characters').optional(),
+  permissions: z.array(z.string().min(1)).min(1, 'At least one permission is required').optional(),
+  expiresAt: z.string().datetime().nullable().optional(),
+});
+
 module.exports = {
   telemetrySchema,
   telemetryBatchSchema,
@@ -69,4 +87,6 @@ module.exports = {
   incidentDetectSchema,
   demoResetSchema,
   demoStartSchema,
+  createProjectSchema,
+  createApiKeySchema,
 };

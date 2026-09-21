@@ -7,6 +7,7 @@ const {
   MongoIncidentEventRepository,
   MongoDeploymentRepository,
   MongoApiKeyRepository,
+  MongoProjectRepository,
 } = require('./infrastructure/repositories');
 const {
   TelemetryProcessingService,
@@ -17,6 +18,8 @@ const {
   DeploymentAnalysisService,
   DeploymentService,
   DemoSimulator,
+  ProjectService,
+  ApiKeyService,
 } = require('./application');
 const { config } = require('./config');
 
@@ -45,8 +48,18 @@ function createContainer() {
   const incidentEventRepository = new MongoIncidentEventRepository();
   const deploymentRepository = new MongoDeploymentRepository();
   const apiKeyRepository = new MongoApiKeyRepository();
+  const projectRepository = new MongoProjectRepository();
 
   // Application services
+  const projectService = new ProjectService({
+    projectRepository,
+  });
+
+  const apiKeyService = new ApiKeyService({
+    apiKeyRepository,
+    projectRepository,
+  });
+
   const graphService = new DependencyGraphService({
     serviceRepository,
     dependencyRepository,
@@ -110,6 +123,7 @@ function createContainer() {
     incidentEventRepository,
     deploymentRepository,
     apiKeyRepository,
+    projectRepository,
     // Services
     eventBus,
     graphService,
@@ -120,6 +134,8 @@ function createContainer() {
     deploymentAnalysisService,
     deploymentService,
     demoSimulator,
+    projectService,
+    apiKeyService,
   };
 }
 

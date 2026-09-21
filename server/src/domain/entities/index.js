@@ -5,6 +5,7 @@ const Incident = require('./Incident');
 const IncidentEvent = require('./IncidentEvent');
 const Deployment = require('./Deployment');
 const ApiKey = require('./ApiKey');
+const Project = require('./Project');
 
 module.exports = {
   Service,
@@ -14,5 +15,6 @@ module.exports = {
   IncidentEvent,
   Deployment,
   ApiKey,
+  Project,
 };
 

@@ -11,6 +11,7 @@ const Incident = require('../../src/domain/entities/Incident');
 const IncidentEvent = require('../../src/domain/entities/IncidentEvent');
 const Deployment = require('../../src/domain/entities/Deployment');
 const ApiKey = require('../../src/domain/entities/ApiKey');
+const Project = require('../../src/domain/entities/Project');
 
 class FakeServiceRepository {
   constructor() { this._store = []; }
@@ -250,6 +251,34 @@ class FakeApiKeyRepository {
   }
 }
 
+class FakeProjectRepository {
+  constructor() { this._store = []; }
+  async findById(projectId) {
+    return this._store.find((p) => p.projectId === projectId) || null;
+  }
+  async findBySlug(slug) {
+    return this._store.find((p) => p.slug === slug) || null;
+  }
+  async findAll(filter = {}) {
+    return this._store.filter((p) => {
+      if (filter.status && p.status !== filter.status) return false;
+      return true;
+    });
+  }
+  async save(project) {
+    this._store.push(project);
+    return project;
+  }
+  async update(project) {
+    const idx = this._store.findIndex((p) => p.projectId === project.projectId);
+    if (idx >= 0) this._store[idx] = project;
+    return project;
+  }
+  async deleteAll() {
+    this._store = [];
+  }
+}
+
 class FakeEventBus {
   constructor() { this.published = []; this._handlers = new Map(); }
   subscribe(type, handler) {
@@ -272,5 +301,6 @@ module.exports = {
   FakeIncidentEventRepository,
   FakeDeploymentRepository,
   FakeApiKeyRepository,
+  FakeProjectRepository,
   FakeEventBus,
 };

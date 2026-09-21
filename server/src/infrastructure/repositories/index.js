@@ -5,6 +5,7 @@ const IncidentRepository = require('./IncidentRepository');
 const IncidentEventRepository = require('./IncidentEventRepository');
 const DeploymentRepository = require('./DeploymentRepository');
 const ApiKeyRepository = require('./ApiKeyRepository');
+const ProjectRepository = require('./ProjectRepository');
 
 const MongoServiceRepository = require('./MongoServiceRepository');
 const MongoDependencyRepository = require('./MongoDependencyRepository');
@@ -13,6 +14,7 @@ const MongoIncidentRepository = require('./MongoIncidentRepository');
 const MongoIncidentEventRepository = require('./MongoIncidentEventRepository');
 const MongoDeploymentRepository = require('./MongoDeploymentRepository');
 const MongoApiKeyRepository = require('./MongoApiKeyRepository');
+const MongoProjectRepository = require('./MongoProjectRepository');
 
 module.exports = {
   // Interfaces
@@ -23,6 +25,7 @@ module.exports = {
   IncidentEventRepository,
   DeploymentRepository,
   ApiKeyRepository,
+  ProjectRepository,
   // Mongo implementations
   MongoServiceRepository,
   MongoDependencyRepository,
@@ -31,5 +34,6 @@ module.exports = {
   MongoIncidentEventRepository,
   MongoDeploymentRepository,
   MongoApiKeyRepository,
+  MongoProjectRepository,
 };
 

@@ -81,6 +81,16 @@ class ForbiddenError extends DomainError {
   }
 }
 
+/**
+ * Thrown when an entity creation conflicts with an existing unique field (e.g. duplicate slug).
+ */
+class ConflictError extends DomainError {
+  constructor(message = 'Conflict') {
+    super(message, 'CONFLICT');
+    this.name = 'ConflictError';
+  }
+}
+
 module.exports = {
   DomainError,
   ValidationError,
@@ -89,5 +99,6 @@ module.exports = {
   EntityNotFoundError,
   UnauthorizedError,
   ForbiddenError,
+  ConflictError,
 };
 

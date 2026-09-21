@@ -146,4 +146,101 @@ describe('authMiddleware Unit Tests', () => {
     expect(res.body.error.message).toContain('Insufficient permissions');
     expect(next).not.toHaveBeenCalled();
   });
+
+  describe('with projectRepository', () => {
+    let projectRepo, authWithProjects;
+
+    beforeEach(() => {
+      const { FakeProjectRepository } = require('../../helpers/fakes');
+      const Project = require('../../../src/domain/entities/Project');
+      projectRepo = new FakeProjectRepository();
+      authWithProjects = createAuthMiddleware({
+        apiKeyRepository: apiKeyRepo,
+        projectRepository: projectRepo,
+        requiredPermission: 'telemetry:write',
+      });
+    });
+
+    it('should allow active project telemetry', async () => {
+      const Project = require('../../../src/domain/entities/Project');
+      const project = new Project({
+        projectId: 'proj_active_123',
+        name: 'Active Project',
+        slug: 'active-project',
+        status: 'active',
+      });
+      await projectRepo.save(project);
+
+      const { apiKey, plaintextKey } = ApiKey.generate({
+        projectId: 'proj_active_123',
+      });
+      await apiKeyRepo.save(apiKey);
+
+      const { req, res, next } = mockReqRes({
+        'x-ghoststack-key': plaintextKey,
+      });
+      await authWithProjects(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.ghostStack.projectId).toBe('proj_active_123');
+    });
+
+    it('should reject telemetry with 403 when project is archived', async () => {
+      const Project = require('../../../src/domain/entities/Project');
+      const project = new Project({
+        projectId: 'proj_archived_123',
+        name: 'Archived Project',
+        slug: 'archived-project',
+        status: 'archived',
+      });
+      await projectRepo.save(project);
+
+      const { apiKey, plaintextKey } = ApiKey.generate({
+        projectId: 'proj_archived_123',
+      });
+      await apiKeyRepo.save(apiKey);
+
+      const { req, res, next } = mockReqRes({
+        'x-ghoststack-key': plaintextKey,
+      });
+      await authWithProjects(req, res, next);
+
+      expect(res.statusCode).toBe(403);
+      expect(res.body.error.code).toBe('FORBIDDEN');
+      expect(res.body.error.message).toContain('archived');
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('should reject telemetry with 401 when project does not exist', async () => {
+      const { apiKey, plaintextKey } = ApiKey.generate({
+        projectId: 'proj_unknown_999',
+      });
+      await apiKeyRepo.save(apiKey);
+
+      const { req, res, next } = mockReqRes({
+        'x-ghoststack-key': plaintextKey,
+      });
+      await authWithProjects(req, res, next);
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+      expect(res.body.error.message).toContain('Project not found');
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it('should allow project-default and project-demo even without project record for backward compatibility', async () => {
+      const { apiKey: defKey, plaintextKey: defPlain } = ApiKey.generate({
+        projectId: 'project-default',
+      });
+      await apiKeyRepo.save(defKey);
+
+      const { req, res, next } = mockReqRes({
+        'x-ghoststack-key': defPlain,
+      });
+      await authWithProjects(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(req.ghostStack.projectId).toBe('project-default');
+    });
+  });
 });
