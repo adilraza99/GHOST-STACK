@@ -14,6 +14,12 @@ const incidentSchema = new mongoose.Schema(
       default: 'project-default',
       index: true,
     },
+    environment: {
+      type: String,
+      required: true,
+      default: 'production',
+      index: true,
+    },
     title: {
       type: String,
       required: true,
@@ -65,6 +71,10 @@ incidentSchema.index({ status: 1 });
 incidentSchema.index({ startedAt: -1 });
 // Severity filtering
 incidentSchema.index({ severity: 1, startedAt: -1 });
+// Project and environment compound indexes
+incidentSchema.index({ projectId: 1, environment: 1, status: 1 });
+incidentSchema.index({ projectId: 1, environment: 1, 'trigger.serviceName': 1, status: 1 });
+incidentSchema.index({ projectId: 1, startedAt: -1 });
 
 const IncidentModel = mongoose.model('Incident', incidentSchema);
 

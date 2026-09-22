@@ -54,6 +54,7 @@ class IncidentEvent {
     }
 
     this.eventId = props.eventId || uuidv4();
+    this.projectId = props.projectId || props.metadata?.projectId || 'project-default';
     this.incidentId = props.incidentId;
     this.timestamp = timestamp;
     this.serviceId = props.serviceId;
@@ -65,6 +66,7 @@ class IncidentEvent {
   toJSON() {
     return {
       eventId: this.eventId,
+      projectId: this.projectId,
       incidentId: this.incidentId,
       timestamp: this.timestamp.toISOString(),
       serviceId: this.serviceId,

@@ -118,11 +118,13 @@ class FakeTelemetryRepository {
   }
   async findByTimeRange(start, end, options = {}) {
     return this._store
-      .filter((e) =>
-        e.timestamp >= start &&
-        e.timestamp <= end &&
-        (options.projectId === undefined || (e.projectId || 'project-default') === options.projectId)
-      )
+      .filter((e) => {
+        if (e.timestamp < start || e.timestamp > end) return false;
+        if (options.projectId !== undefined && (e.projectId || 'project-default') !== options.projectId) return false;
+        if (options.environment !== undefined && (e.environment || 'production') !== options.environment) return false;
+        if (options.sourceService !== undefined && e.sourceService !== options.sourceService) return false;
+        return true;
+      })
       .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
   async findByService(name, opts = {}) {
@@ -152,9 +154,74 @@ class FakeTelemetryRepository {
 
 class FakeIncidentRepository {
   constructor() { this._store = []; }
-  async findById(id) { return this._store.find((i) => i.incidentId === id) || null; }
-  async findAll() { return [...this._store].sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime()); }
-  async findByStatus(status) { return this._store.filter((i) => i.status === status); }
+  async findById(arg1, arg2) {
+    if (arg2 !== undefined) {
+      const projectId = arg1;
+      const incidentId = arg2;
+      return this._store.find((i) =>
+        i.incidentId === incidentId &&
+        (i.projectId || i.metadata?.projectId || 'project-default') === projectId
+      ) || null;
+    }
+    return this._store.find((i) => i.incidentId === arg1) || null;
+  }
+  async findAll(filter = {}) {
+    return [...this._store]
+      .filter((i) => {
+        if (filter.projectId && (i.projectId || i.metadata?.projectId || 'project-default') !== filter.projectId) return false;
+        if (filter.environment && (i.environment || i.metadata?.environment || 'production') !== filter.environment) return false;
+        if (filter.status && i.status !== filter.status) return false;
+        return true;
+      })
+      .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+  }
+  async findByStatus(status, options = {}) {
+    return this._store.filter((i) => {
+      if (i.status !== status) return false;
+      if (options.projectId && (i.projectId || i.metadata?.projectId || 'project-default') !== options.projectId) return false;
+      if (options.environment && (i.environment || i.metadata?.environment || 'production') !== options.environment) return false;
+      return true;
+    });
+  }
+  async findActiveByService(projectId, environment, serviceIdOrName) {
+    const proj = projectId || 'project-default';
+    const env = environment || 'production';
+    return this._store.find((i) => {
+      const iProj = i.projectId || i.metadata?.projectId || 'project-default';
+      const iEnv = i.environment || i.metadata?.environment || 'production';
+      if (iProj !== proj || iEnv !== env) return false;
+      if (i.status !== 'detected' && i.status !== 'investigating') return false;
+      const affected = i.affectedServices || [];
+      const trgName = i.trigger?.serviceName;
+      const trgId = i.trigger?.serviceId;
+      return affected.includes(serviceIdOrName) || trgName === serviceIdOrName || trgId === serviceIdOrName;
+    }) || null;
+  }
+  async findActive(projectId, environment) {
+    return this._store
+      .filter((i) => {
+        if (i.status !== 'detected' && i.status !== 'investigating') return false;
+        if (projectId && (i.projectId || i.metadata?.projectId || 'project-default') !== projectId) return false;
+        if (environment && (i.environment || i.metadata?.environment || 'production') !== environment) return false;
+        return true;
+      })
+      .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime());
+  }
+  async findByProject(projectId, filters = {}) {
+    return this._store
+      .filter((i) => {
+        const proj = i.projectId || i.metadata?.projectId || 'project-default';
+        if (proj !== projectId) return false;
+        if (filters.environment && (i.environment || i.metadata?.environment || 'production') !== filters.environment) return false;
+        if (filters.status && i.status !== filters.status) return false;
+        if (filters.severity && i.severity !== filters.severity) return false;
+        if (filters.startTime && i.startedAt < new Date(filters.startTime)) return false;
+        if (filters.endTime && i.startedAt > new Date(filters.endTime)) return false;
+        return true;
+      })
+      .sort((a, b) => b.startedAt.getTime() - a.startedAt.getTime())
+      .slice(0, filters.limit || undefined);
+  }
   async save(incident) {
     this._store.push(incident);
     return incident;
@@ -179,13 +246,33 @@ class FakeIncidentEventRepository {
     this._store.push(event);
     return event;
   }
-  async findByIncidentId(incidentId) {
+  async findByIncidentId(arg1, arg2) {
+    if (arg2 !== undefined) {
+      const projectId = arg1;
+      const incidentId = arg2;
+      return this._store
+        .filter((e) =>
+          e.incidentId === incidentId &&
+          (e.projectId || e.metadata?.projectId || 'project-default') === projectId
+        )
+        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+    }
     return this._store
-      .filter((e) => e.incidentId === incidentId)
+      .filter((e) => e.incidentId === arg1)
       .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   }
-  async findByServiceId(serviceId) {
-    return this._store.filter((e) => e.serviceId === serviceId);
+  async findByTelemetryEventId(incidentId, telemetryEventId) {
+    return this._store.find((e) =>
+      e.incidentId === incidentId &&
+      e.metadata?.telemetryEventId === telemetryEventId
+    ) || null;
+  }
+  async findByServiceId(serviceId, options = {}) {
+    return this._store.filter((e) => {
+      if (e.serviceId !== serviceId) return false;
+      if (options.projectId && (e.projectId || e.metadata?.projectId || 'project-default') !== options.projectId) return false;
+      return true;
+    });
   }
   async deleteAll(projectId) {
     if (projectId) {

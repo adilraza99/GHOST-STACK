@@ -9,9 +9,10 @@ class TelemetryRepository {
   /**
    * @param {Date} startTime
    * @param {Date} endTime
+   * @param {object} [options] - { projectId, environment, sourceService }
    * @returns {Promise<import('../../domain/entities/TelemetryEvent')[]>}
    */
-  async findByTimeRange(startTime, endTime) {
+  async findByTimeRange(startTime, endTime, options = {}) {
     throw new Error('TelemetryRepository.findByTimeRange() not implemented');
   }
 

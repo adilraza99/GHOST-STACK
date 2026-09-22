@@ -206,11 +206,24 @@ GhostStack includes a deterministic Demo Simulator built directly into the appli
 - `POST /api/deployments` - Legacy/default deployment endpoint (records to `project-default`).
 - `POST /api/deployments/analyze` - Analyze the potential impact of a proposed deployment.
 
-#### Incidents
-- `GET /api/incidents` - List all detected incidents.
-- `GET /api/incidents/:id` - Get incident details.
-- `GET /api/incidents/:id/replay` - Get a timeline of events that triggered the incident.
-- `POST /api/incidents/detect` - Manually trigger the incident detection engine against recent telemetry.
+#### Incidents & Continuous Intelligence
+- `GET /api/projects/:projectId/incidents` - List incidents scoped to a project (supports `?environment=...&status=...&severity=...&limit=...`).
+- `GET /api/projects/:projectId/incidents/:id` - Get single incident details scoped to project.
+- `GET /api/projects/:projectId/incidents/:id/replay` - Chronological incident timeline replay with millisecond offsets (`relativeTimeMs`).
+- `POST /api/projects/:projectId/incidents/detect` - Trigger detection evaluation scoped specifically to project telemetry.
+- `GET /api/incidents` - Global incident listing (legacy / dashboard).
+- `GET /api/incidents/:id` - Global incident details.
+- `GET /api/incidents/:id/replay` - Global incident timeline replay.
+- `POST /api/incidents/detect` - Global manual trigger for incident detection against recent telemetry.
+
+##### Continuous Detection & Intelligence Engine
+- **Event-Driven Architecture**: The `IncidentDetectionService` subscribes to `telemetry.processed` events on the in-process `LocalEventBus`. Every ingested telemetry event immediately evaluates for anomaly creation, active incident updates, or auto-resolution.
+- **Configurable Detection Policy (`IncidentDetectionPolicy`)**: Evaluates anomalies using configurable rolling time windows (`timeWindowMs`), sample size minimums (`minimumEvents`), error rate thresholds (`errorRateThreshold`), and latency limits (`latencyThresholdMs`).
+- **Continuous Deduplication**: Ongoing failures for the same `(projectId, environment, service)` continuously update the active incident's severity, trigger statistics, and timeline rather than creating noisy duplicate incident records.
+- **Timeline Idempotency**: Duplicate telemetry deliveries (same `eventId`) are detected and skipped in the timeline, preventing timeline bloat.
+- **Auto-Resolution on Metric Recovery**: When error rates drop below `recoveryErrorRateThreshold` and latency drops below `recoveryLatencyThresholdMs` across `minimumRecoveryEvents` within `recoveryObservationWindowMs`, active incidents automatically transition to `resolved` with an `endedAt` timestamp.
+- **Terminal Resolution Invariant**: `resolved` is a strictly terminal state. Resolved incidents are NEVER reopened; any future anomaly creates a fresh incident entity with its own lifecycle.
+- **Tenant & Environment Isolation**: Incidents and timeline events are strictly isolated by `projectId` and `environment`. Telemetry in staging never contaminates production incidents.
 
 #### Demo Simulator
 - `GET /api/demo/scenarios` - List available demo scenarios.

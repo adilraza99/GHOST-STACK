@@ -11,6 +11,7 @@ class MongoIncidentEventRepository extends IncidentEventRepository {
     return new IncidentEvent({
       eventId: doc.eventId,
       incidentId: doc.incidentId,
+      projectId: doc.projectId || doc.metadata?.projectId || 'project-default',
       timestamp: doc.timestamp,
       serviceId: doc.serviceId,
       type: doc.type,
@@ -23,6 +24,7 @@ class MongoIncidentEventRepository extends IncidentEventRepository {
     const doc = await IncidentEventModel.create({
       eventId: incidentEvent.eventId,
       incidentId: incidentEvent.incidentId,
+      projectId: incidentEvent.projectId || incidentEvent.metadata?.projectId || 'project-default',
       timestamp: incidentEvent.timestamp,
       serviceId: incidentEvent.serviceId,
       type: incidentEvent.type,
@@ -32,15 +34,31 @@ class MongoIncidentEventRepository extends IncidentEventRepository {
     return this._toDomain(doc);
   }
 
-  async findByIncidentId(incidentId) {
-    const docs = await IncidentEventModel.find({ incidentId })
+  async findByIncidentId(arg1, arg2) {
+    let query;
+    if (arg2 !== undefined) {
+      query = { projectId: arg1, incidentId: arg2 };
+    } else {
+      query = { incidentId: arg1 };
+    }
+    const docs = await IncidentEventModel.find(query)
       .sort({ timestamp: 1 })
       .lean();
     return docs.map((doc) => this._toDomain(doc));
   }
 
-  async findByServiceId(serviceId) {
-    const docs = await IncidentEventModel.find({ serviceId })
+  async findByTelemetryEventId(incidentId, telemetryEventId) {
+    const doc = await IncidentEventModel.findOne({
+      incidentId,
+      'metadata.telemetryEventId': telemetryEventId,
+    }).lean();
+    return this._toDomain(doc);
+  }
+
+  async findByServiceId(serviceId, options = {}) {
+    const query = { serviceId };
+    if (options.projectId) query.projectId = options.projectId;
+    const docs = await IncidentEventModel.find(query)
       .sort({ timestamp: -1 })
       .lean();
     return docs.map((doc) => this._toDomain(doc));

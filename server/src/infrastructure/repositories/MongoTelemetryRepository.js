@@ -26,22 +26,30 @@ class MongoTelemetryRepository extends TelemetryRepository {
   }
 
   async save(telemetryEvent) {
-    const doc = await TelemetryEventModel.create({
-      eventId: telemetryEvent.eventId,
-      projectId: telemetryEvent.projectId || 'project-default',
-      timestamp: telemetryEvent.timestamp,
-      sourceService: telemetryEvent.sourceService,
-      targetService: telemetryEvent.targetService,
-      endpoint: telemetryEvent.endpoint,
-      method: telemetryEvent.method,
-      statusCode: telemetryEvent.statusCode,
-      latencyMs: telemetryEvent.latencyMs,
-      traceId: telemetryEvent.traceId,
-      requestId: telemetryEvent.requestId,
-      environment: telemetryEvent.environment,
-      metadata: telemetryEvent.metadata,
-    });
-    return this._toDomain(doc);
+    try {
+      const doc = await TelemetryEventModel.create({
+        eventId: telemetryEvent.eventId,
+        projectId: telemetryEvent.projectId || 'project-default',
+        timestamp: telemetryEvent.timestamp,
+        sourceService: telemetryEvent.sourceService,
+        targetService: telemetryEvent.targetService,
+        endpoint: telemetryEvent.endpoint,
+        method: telemetryEvent.method,
+        statusCode: telemetryEvent.statusCode,
+        latencyMs: telemetryEvent.latencyMs,
+        traceId: telemetryEvent.traceId,
+        requestId: telemetryEvent.requestId,
+        environment: telemetryEvent.environment,
+        metadata: telemetryEvent.metadata,
+      });
+      return this._toDomain(doc);
+    } catch (err) {
+      if (err.code === 11000 && err.keyPattern?.eventId) {
+        const existing = await TelemetryEventModel.findOne({ eventId: telemetryEvent.eventId }).lean();
+        return this._toDomain(existing);
+      }
+      throw err;
+    }
   }
 
   async findByTimeRange(startTime, endTime, options = {}) {
@@ -50,6 +58,12 @@ class MongoTelemetryRepository extends TelemetryRepository {
     };
     if (options && options.projectId !== undefined) {
       query.projectId = options.projectId;
+    }
+    if (options && options.environment !== undefined) {
+      query.environment = options.environment;
+    }
+    if (options && options.sourceService !== undefined) {
+      query.sourceService = options.sourceService;
     }
     const docs = await TelemetryEventModel.find(query)
       .sort({ timestamp: -1 })

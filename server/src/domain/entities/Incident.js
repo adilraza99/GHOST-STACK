@@ -46,6 +46,7 @@ class Incident {
 
     this.incidentId = props.incidentId || uuidv4();
     this.projectId = props.projectId || props.metadata?.projectId || 'project-default';
+    this.environment = props.environment || props.trigger?.environment || props.metadata?.environment || 'production';
     this.title = props.title.trim();
     this.status = status;
     this.severity = props.severity;
@@ -104,6 +105,24 @@ class Incident {
   }
 
   /**
+   * Whether the incident is resolved.
+   */
+  isResolved() {
+    return this.status === 'resolved';
+  }
+
+  /**
+   * Updates trigger metrics/data for an ongoing incident.
+   * @param {object} updatedTrigger
+   */
+  updateTrigger(updatedTrigger) {
+    this.trigger = {
+      ...this.trigger,
+      ...updatedTrigger,
+    };
+  }
+
+  /**
    * Returns the duration of the incident in milliseconds.
    * Returns null if the incident hasn't ended.
    */
@@ -116,6 +135,7 @@ class Incident {
     return {
       incidentId: this.incidentId,
       projectId: this.projectId,
+      environment: this.environment,
       title: this.title,
       status: this.status,
       severity: this.severity,

@@ -4,6 +4,7 @@ const { z } = require('zod');
  * POST /api/telemetry — single telemetry event
  */
 const telemetrySchema = z.object({
+  eventId: z.string().optional(),
   projectId: z.string().optional(),
   sourceService: z.string().min(1, 'sourceService is required'),
   timestamp: z.string().or(z.date()).optional(),
@@ -91,6 +92,18 @@ const createApiKeySchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
 });
 
+/**
+ * GET /api/projects/:projectId/incidents query parameters
+ */
+const listIncidentsQuerySchema = z.object({
+  environment: z.string().optional(),
+  status: z.enum(['detected', 'investigating', 'resolved']).optional(),
+  severity: z.enum(['critical', 'high', 'medium', 'low']).optional(),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+}).optional();
+
 module.exports = {
   telemetrySchema,
   telemetryBatchSchema,
@@ -98,6 +111,7 @@ module.exports = {
   listDeploymentsQuerySchema,
   deploymentAnalyzeSchema,
   incidentDetectSchema,
+  listIncidentsQuerySchema,
   demoResetSchema,
   demoStartSchema,
   createProjectSchema,

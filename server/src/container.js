@@ -85,6 +85,15 @@ function createContainer() {
     config: config.incidents,
   });
 
+  // Continuous incident detection: subscribe to processed telemetry events
+  eventBus.subscribe('telemetry.processed', async (payload) => {
+    try {
+      await incidentDetectionService.processTelemetryEvent(payload);
+    } catch (err) {
+      // Clean failure isolation: event bus subscriber errors must never break telemetry ingestion
+    }
+  });
+
   const incidentReplayService = new IncidentReplayService({
     incidentRepository,
     incidentEventRepository,

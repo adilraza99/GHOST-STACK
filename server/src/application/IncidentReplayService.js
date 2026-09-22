@@ -23,7 +23,8 @@ class IncidentReplayService {
   /**
    * Replays an incident timeline.
    *
-   * @param {string} incidentId
+   * @param {string} arg1 - incidentId or projectId
+   * @param {string} [arg2] - incidentId when arg1 is projectId
    * @returns {Promise<{
    *   incident: object,
    *   timeline: Array<{
@@ -36,15 +37,28 @@ class IncidentReplayService {
    * }>}
    * @throws {EntityNotFoundError} if incident not found
    */
-  async replay(incidentId) {
-    // 1. Fetch incident
-    const incident = await this.incidentRepository.findById(incidentId);
+  async replay(arg1, arg2) {
+    let incident;
+    let incidentId;
+    let projectId;
+
+    if (arg2 !== undefined) {
+      projectId = arg1;
+      incidentId = arg2;
+      incident = await this.incidentRepository.findById(projectId, incidentId);
+    } else {
+      incidentId = arg1;
+      incident = await this.incidentRepository.findById(incidentId);
+    }
+
     if (!incident) {
       throw new EntityNotFoundError('Incident', incidentId);
     }
 
     // 2. Fetch all events for this incident (already sorted by timestamp asc from repo)
-    const events = await this.incidentEventRepository.findByIncidentId(incidentId);
+    const events = projectId
+      ? await this.incidentEventRepository.findByIncidentId(projectId, incidentId)
+      : await this.incidentEventRepository.findByIncidentId(incidentId);
 
     // 3. Build timeline with relativeTimeMs
     const startTime = incident.startedAt.getTime();

@@ -12,6 +12,12 @@ const incidentEventSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    projectId: {
+      type: String,
+      required: true,
+      default: 'project-default',
+      index: true,
+    },
     timestamp: {
       type: Date,
       required: true,
@@ -42,8 +48,11 @@ const incidentEventSchema = new mongoose.Schema(
 
 // Timeline query: all events for an incident, ordered by time
 incidentEventSchema.index({ incidentId: 1, timestamp: 1 });
+incidentEventSchema.index({ projectId: 1, incidentId: 1, timestamp: 1 });
 // Service-specific incident event lookup
 incidentEventSchema.index({ serviceId: 1, timestamp: -1 });
+// Telemetry deduplication / idempotency lookup
+incidentEventSchema.index({ incidentId: 1, 'metadata.telemetryEventId': 1 });
 
 const IncidentEventModel = mongoose.model('IncidentEvent', incidentEventSchema);
 
