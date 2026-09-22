@@ -1,0 +1,32 @@
+{
+  "name": "@ghoststack/node",
+  "version": "0.1.0",
+  "description": "Production-grade Node.js SDK for GHOST-STACK incident intelligence and distributed tracing",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "ghoststack",
+    "opentelemetry",
+    "tracing",
+    "incident-intelligence",
+    "observability",
+    "monitoring"
+  ],
+  "author": "GHOST-STACK Team",
+  "license": "Apache-2.0",
+  "dependencies": {}
+}
