@@ -113,6 +113,10 @@ class FakeDependencyRepository {
 class FakeTelemetryRepository {
   constructor() { this._store = []; }
   async save(event) {
+    const existing = this._store.find((e) => e.eventId === event.eventId);
+    if (existing) {
+      return existing;
+    }
     this._store.push(event);
     return event;
   }

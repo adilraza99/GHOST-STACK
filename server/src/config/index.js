@@ -35,6 +35,12 @@ const config = {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 60000,
     maxRequests: parseInt(process.env.RATE_LIMIT_MAX, 10) || 200,
   },
+
+  // OpenTelemetry (OTLP) configuration
+  otlp: {
+    maxSpansPerRequest: parseInt(process.env.OTLP_MAX_SPANS, 10) || 1000,
+    bodyLimit: process.env.OTLP_BODY_LIMIT || '2mb',
+  },
 };
 
 /**

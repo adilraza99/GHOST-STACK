@@ -18,6 +18,7 @@ const { createIncidentRoutes } = require('./interfaces/http/routes/incidentRoute
 const { createDeploymentRoutes } = require('./interfaces/http/routes/deploymentRoutes');
 const { createDemoRoutes } = require('./interfaces/http/routes/demoRoutes');
 const { createProjectRoutes } = require('./interfaces/http/routes/projectRoutes');
+const { createOtlpRoutes } = require('./interfaces/http/routes/otlpRoutes');
 
 /**
  * Creates and configures the Express application.
@@ -54,7 +55,11 @@ function createApp(container) {
   app.use(limiter);
 
   // --- Request parsing ---
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: config.otlp?.bodyLimit || '2mb' }));
+  app.use(express.raw({
+    type: ['application/x-protobuf', 'application/protobuf'],
+    limit: config.otlp?.bodyLimit || '2mb',
+  }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
   // --- Request tracking & logging ---
@@ -71,6 +76,11 @@ function createApp(container) {
   app.use('/api', createDeploymentRoutes(container));
   app.use('/api', createDemoRoutes(container));
   app.use('/api', createProjectRoutes(container));
+
+  // --- OpenTelemetry (OTLP) Routes ---
+  const otlpRoutes = createOtlpRoutes(container);
+  app.use('/api/otlp', otlpRoutes);
+  app.use('/', otlpRoutes);
 
   // --- Error handling ---
   app.use(notFoundHandler);

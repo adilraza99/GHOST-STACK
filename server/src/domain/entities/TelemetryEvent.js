@@ -71,7 +71,7 @@ class TelemetryEvent {
     this.targetService = props.targetService ? props.targetService.trim() : null;
     this.endpoint = props.endpoint || null;
     this.method = props.method ? props.method.toUpperCase() : null;
-    this.statusCode = props.statusCode !== undefined ? Number(props.statusCode) : null;
+    this.statusCode = (props.statusCode !== undefined && props.statusCode !== null) ? Number(props.statusCode) : null;
     this.latencyMs = props.latencyMs !== undefined ? props.latencyMs : null;
     this.traceId = props.traceId || null;
     this.requestId = props.requestId || null;
