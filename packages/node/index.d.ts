@@ -47,9 +47,15 @@ export interface SDKStats {
   lastFailureAt: string | null;
 }
 
+export class ConfigError extends Error {
+  constructor(message: string);
+}
+
 export class GhostStackClient {
   constructor(options?: GhostStackConfig);
   startSpan(name: string, options?: SpanOptions): Span;
+  getActiveSpan(): Span | null;
+  withSpan<T>(span: Span, fn: () => T): T;
   flush(): Promise<void>;
   middleware(): (req: any, res: any, next: (err?: any) => void) => void;
   instrumentHttp(): this;
@@ -65,3 +71,5 @@ export function middleware(): (req: any, res: any, next: (err?: any) => void) =>
 export function parseTraceparent(header: string): { version: string; traceId: string; parentId: string; traceFlags: string; sampled: boolean } | null;
 export function formatTraceparent(traceId: string, spanId: string, sampled?: boolean): string;
 export function injectTraceContext(headers: Record<string, any>, traceId: string, spanId: string, sampled?: boolean): Record<string, any>;
+export function getActiveSpan(): Span | null;
+export function runWithSpan<T>(span: Span, fn: () => T): T;

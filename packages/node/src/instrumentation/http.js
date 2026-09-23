@@ -18,7 +18,9 @@ const GHOSTSTACK_SERVER_SPAN = Symbol('ghoststack.server_span');
 const GHOSTSTACK_CLIENT_SPAN = Symbol('ghoststack.client_span');
 
 let originalHttpRequest = null;
+let originalHttpGet = null;
 let originalHttpsRequest = null;
+let originalHttpsGet = null;
 let activeClients = new Set();
 
 /**
@@ -69,16 +71,32 @@ function instrumentHttp(client) {
   }
 
   originalHttpRequest = http.request;
+  originalHttpGet = http.get;
   originalHttpsRequest = https.request;
+  originalHttpsGet = https.get;
 
   // Patch http.request
   http.request = function ghoststackPatchedHttpRequest(...args) {
     return wrapClientRequest(client, originalHttpRequest, 'http:', ...args);
   };
 
+  // Patch http.get
+  http.get = function ghoststackPatchedHttpGet(...args) {
+    const req = http.request(...args);
+    req.end();
+    return req;
+  };
+
   // Patch https.request
   https.request = function ghoststackPatchedHttpsRequest(...args) {
     return wrapClientRequest(client, originalHttpsRequest, 'https:', ...args);
+  };
+
+  // Patch https.get
+  https.get = function ghoststackPatchedHttpsGet(...args) {
+    const req = https.request(...args);
+    req.end();
+    return req;
   };
 }
 
@@ -96,9 +114,13 @@ function uninstrumentHttp(client) {
 
   if (activeClients.size === 0 && originalHttpRequest) {
     http.request = originalHttpRequest;
+    http.get = originalHttpGet;
     https.request = originalHttpsRequest;
+    https.get = originalHttpsGet;
     originalHttpRequest = null;
+    originalHttpGet = null;
     originalHttpsRequest = null;
+    originalHttpsGet = null;
   }
 }
 

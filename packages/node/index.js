@@ -6,7 +6,13 @@
 
 const GhostStackClient = require('./src/GhostStackClient');
 const { ConfigError } = require('./src/config');
-const { parseTraceparent, formatTraceparent, injectTraceContext } = require('./src/traceContext');
+const {
+  parseTraceparent,
+  formatTraceparent,
+  injectTraceContext,
+  getActiveSpan,
+  runWithSpan,
+} = require('./src/traceContext');
 
 let globalClient = null;
 
@@ -73,4 +79,6 @@ module.exports = {
   parseTraceparent,
   formatTraceparent,
   injectTraceContext,
+  getActiveSpan,
+  runWithSpan,
 };
